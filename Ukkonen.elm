@@ -23,7 +23,7 @@ type alias UkkonenTree = {
 
 
 -- Add another character to the tree
-insert : UkkonenTree -> Char -> Maybe UkkonenTree
+insert : UkkonenTree -> Char -> UkkonenTree
 insert tree char =
   let
     -- Append the new character to the tree's input string
@@ -40,25 +40,30 @@ insert tree char =
       Nothing ->
 
         -- If an edge starting with the character already exists at this node
-        if hasEdge activePoint.node char then
-          apAdvanceToEdge tree char 
-        else
-          apCreateEdge tree i char
+        case getEdge activePoint.node char of
+          Just edge -> { tree | 
+            activePoint <- apAdvanceToEdge activePoint edge,
+            remainder <- tree.remainder + 1 }
 
-      Just edge -> 
+          Nothing -> { tree |
+            activePoint <- apCreateEdge activePoint i char }
+
+      Just (edge, edgeSteps) -> 
         let
           -- This is the index of the input string that the current edge
           -- location points to.
-          currentStringIndex = edge.from + activePoint.edgeSteps 
+          currentStringIndex = edge.from + edgeSteps 
         in
           -- If the new suffix is already implicitly present in the tree
           case Array.get currentStringIndex tree.string of
             Just c -> 
               if char == c then
-                apAdvanceOnEdge tree
+                { tree |
+                  activePoint <- apAdvanceOnEdge activePoint (edge, edgeSteps),
+                  remainder <- tree.remainder + 1 }
               else
-                Just tree
-            Nothing -> Nothing
+                tree
+            Nothing -> tree
 
 
 -- Check whether the node has an edge that starts with `char`
@@ -101,18 +106,18 @@ apCreateEdge activePoint i char = let
 -- Move `activePoint` onto the edge that starts with `char`
 apAdvanceToEdge : ActivePoint-> UkkonenEdge -> ActivePoint
 apAdvanceToEdge activePoint newEdge = 
-  { activePoint | edge <- Just newEdge, edgeSteps <- 1 }
+  { activePoint | edge <- Just (newEdge, 1) }
 
 
 -- Move another step on the active edge (possibly moving off of it onto a node)
-apAdvanceOnEdge : ActivePoint -> ActivePoint
-apAdvanceOnEdge activePoint =
-  case activePoint.edge.to of
-    CurrentEnd -> { activePoint | edgeSteps <- activePoint.edgeSteps + 1 }
+apAdvanceOnEdge : ActivePoint -> (UkkonenEdge, Int) -> ActivePoint
+apAdvanceOnEdge activePoint (edge, edgeSteps) =
+  case edge.to of
+    CurrentEnd -> { activePoint | edgeSteps <- edgeSteps + 1 }
     Definite to ->
       if (to - activePoint.edge.from) - 1 == activePoint.edgeSteps then
         { activePoint | 
-          node <- activePoint.edge.pointingTo,
-          edgeSteps <- 0 }
+          node <- edge.pointingTo,
+          edge <- (edge, 0) }
       else
-        { activePoint | edgeSteps <- activePoint.edgeSteps + 1 }
+        { activePoint | edge <- (edge, edgeSteps + 1) }
