@@ -113,11 +113,11 @@ apAdvanceToEdge activePoint newEdge =
 apAdvanceOnEdge : ActivePoint -> (UkkonenEdge, Int) -> ActivePoint
 apAdvanceOnEdge activePoint (edge, edgeSteps) =
   case edge.to of
-    CurrentEnd -> { activePoint | edgeSteps <- edgeSteps + 1 }
+    CurrentEnd -> { activePoint | edge <- Just (edge, edgeSteps + 1) }
     Definite to ->
-      if (to - activePoint.edge.from) - 1 == activePoint.edgeSteps then
+      if (to - edge.from) - 1 == edgeSteps then
         { activePoint | 
           node <- edge.pointingTo,
-          edge <- (edge, 0) }
+          edge <- Just (edge, 0) }
       else
-        { activePoint | edge <- (edge, edgeSteps + 1) }
+        { activePoint | edge <- Just (edge, edgeSteps + 1) }
