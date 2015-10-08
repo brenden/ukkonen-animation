@@ -2,35 +2,38 @@ import Dict exposing (..)
 import Array exposing (..)
 import String exposing (..)
 
-type UkkonenNode = UkkonenNode (Dict Char UkkonenEdge) (Maybe UkkonenNode)
+type alias UkkonenTree = Dict NodeId UkkonenNode
 
-type ClosingIndex = Definite Int | CurrentEnd
+type alias UkkonenNode = {
+  edges:Dict Char UkkonenEdge
+  suffixLink:Maybe NodeId}
 
 type alias UkkonenEdge = { 
-  pointingTo:UkkonenNode, 
-  from:Int, 
-  to:ClosingIndex }
+  pointingTo:NodeID,
+  labelStart:Int, 
+  labelEnd:ClosingIndex }
 
 type alias ActivePoint = {
   node:UkkonenNode,
   edge:Maybe (UkkonenEdge, Int) }
 
-type alias UkkonenTree = {
-  root:UkkonenNode,
+type alias UkkonenState = {
+  tree: UkkonenTree,
   remainder:Int,
   activePoint:ActivePoint,
   string:Array Char }
 
+type ClosingIndex = Definite Int | EndOfString
 
 -- Add another character to the tree
-insert : UkkonenTree -> Char -> UkkonenTree
-insert tree char =
+insert : UkkonenState -> Char -> UkkonenState
+insert state char =
   let
     -- Append the new character to the tree's input string
-    tree = { tree | string <- push char tree.string }
+    state = { state | string <- push char tree.string }
 
     -- Get convenient references to the tree record's fields
-    {root, remainder, activePoint, string} = tree
+    {tree, remainder, activePoint, string} = state
 
     -- Get the index of the character being inserted
     i = Array.length string - 1
@@ -41,28 +44,30 @@ insert tree char =
 
         -- If an edge starting with the character already exists at this node
         case getEdge activePoint.node char of
-          Just edge -> { tree | 
+          Just edge -> { tree |
             activePoint <- apAdvanceToEdge activePoint edge,
             remainder <- tree.remainder + 1 }
 
           Nothing -> { tree |
             activePoint <- apCreateEdge activePoint i char }
 
-      Just (edge, edgeSteps) -> 
+      Just (edge, edgeSteps) ->
         let
           -- This is the index of the input string that the current edge
           -- location points to.
-          currentStringIndex = edge.from + edgeSteps 
+          currentStringIndex = edge.from + edgeSteps
         in
           -- If the new suffix is already implicitly present in the tree
           case Array.get currentStringIndex tree.string of
-            Just c -> 
+            Just c ->
               if char == c then
                 { tree |
                   activePoint <- apAdvanceOnEdge activePoint (edge, edgeSteps),
                   remainder <- tree.remainder + 1 }
               else
-                tree
+                { tree |
+                  activePoint <- apSplitEdge activePoint (edge, edgeSteps),
+                  remainder <- tree.remainder - 1 }
             Nothing -> tree
 
 
@@ -78,7 +83,7 @@ getEdge (UkkonenNode edges _) char = Dict.get char edges
 
 -- Add `edge` that starts with `char`
 addEdge : UkkonenNode -> Char -> UkkonenEdge -> UkkonenNode
-addEdge (UkkonenNode edges suffixLink) char edge = UkkonenNode (Dict.insert char 
+addEdge (UkkonenNode edges suffixLink) char edge = UkkonenNode (Dict.insert char
   edge edges) suffixLink
 
 
@@ -121,3 +126,8 @@ apAdvanceOnEdge activePoint (edge, edgeSteps) =
           edge <- Just (edge, 0) }
       else
         { activePoint | edge <- Just (edge, edgeSteps + 1) }
+
+
+-- Split the current edge at the shared prefix, resulting in two new nodes
+apSplitEdge : ActivePoint -> (UkkonenEdge, Int) -> ActivePoint
+apSplitEdge activePoint (edge, edgeSteps) = activePoint
