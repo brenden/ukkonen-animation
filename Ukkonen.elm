@@ -1,21 +1,24 @@
+import IntDict exposing (..)
 import Dict exposing (..)
 import Array exposing (..)
 import String exposing (..)
+import Debug
 
-type alias UkkonenTree = Dict NodeId UkkonenNode
+type alias NodeId = Int
+type alias UkkonenTree = IntDict UkkonenNode
 
 type alias UkkonenNode = {
-  edges:Dict Char UkkonenEdge
+  edges:Dict Char UkkonenEdge,
   suffixLink:Maybe NodeId}
 
 type alias UkkonenEdge = { 
-  pointingTo:NodeID,
+  pointingTo:NodeId,
   labelStart:Int, 
   labelEnd:ClosingIndex }
 
 type alias ActivePoint = {
-  node:UkkonenNode,
-  edge:Maybe (UkkonenEdge, Int) }
+  nodeId:NodeId,
+  edge:Maybe (Char, Int) }
 
 type alias UkkonenState = {
   tree: UkkonenTree,
@@ -43,16 +46,21 @@ insert state char =
       Nothing ->
 
         -- If an edge starting with the character already exists at this node
-        case getEdge activePoint.node char of
-          Just edge -> { tree |
-            activePoint <- apAdvanceToEdge activePoint edge,
+        case getEdge tree activePoint.nodeId char of
+          Just edge -> { state |
+            activePoint <- apAdvanceToEdge activePoint char,
             remainder <- tree.remainder + 1 }
 
-          Nothing -> { tree |
-            activePoint <- apCreateEdge activePoint i char }
+          Nothing -> let
+              (newTree, newId) = addNode tree
+            in
+              { state |
+                tree <- addEdge newTree activePoint.nodeId newId char i,
+                activePoint <- apAdvanceToEdge activePoint char }
 
-      Just (edge, edgeSteps) ->
+      Just (edgeChar, edgeSteps) ->
         let
+          edge = getActiveEdge activePoint edgeChar
           -- This is the index of the input string that the current edge
           -- location points to.
           currentStringIndex = edge.from + edgeSteps
@@ -62,42 +70,58 @@ insert state char =
             Just c ->
               if char == c then
                 { tree |
-                  activePoint <- apAdvanceOnEdge activePoint (edge, edgeSteps),
+                  activePoint <-
+                    apAdvanceOnEdge tree activePoint edgeChar edgeSteps
                   remainder <- tree.remainder + 1 }
-              else
-                { tree |
-                  activePoint <- apSplitEdge activePoint (edge, edgeSteps),
-                  remainder <- tree.remainder - 1 }
+              else tree
+                --{ tree |
+                --  activePoint <- apSplitEdge activePoint (edge, edgeSteps),
+                --  remainder <- tree.remainder - 1 }
             Nothing -> tree
 
 
--- Check whether the node has an edge that starts with `char`
-hasEdge : UkkonenNode -> Char -> Bool
-hasEdge (UkkonenNode edges _) char = member char edges
-
-
 -- Get the edge that starts with `char`
-getEdge : UkkonenNode -> Char -> Maybe UkkonenEdge
-getEdge (UkkonenNode edges _) char = Dict.get char edges
+getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge
+getEdge tree nodeId char = case IntDict.get nodeId tree of
+  Just node -> Dict.get char node.edges
+  Nothing -> Debug.crash "Active point is set to a node that doesn't exist"
 
 
 -- Add `edge` that starts with `char`
-addEdge : UkkonenNode -> Char -> UkkonenEdge -> UkkonenNode
-addEdge (UkkonenNode edges suffixLink) char edge = UkkonenNode (Dict.insert char
-  edge edges) suffixLink
+addEdge : UkkonenTree -> NodeId -> NodeId -> Char -> Int -> UkkonenTree
+addEdge tree fromId toId char labelStart = let
+    node = getNode tree fromId
+    newEdges = Dict.insert char (unboundEdge toId labelStart) node.edges
+    newNode = {node | edges <- newEdges}
+  in
+    IntDict.insert fromId newNode tree
+
+
+-- Get the node associated with given id
+getNode : UkkonenTree -> NodeId -> UkkonenNode
+getNode tree nodeId = case IntDict.get fromId tree of
+  Just node -> node
+  Nothing -> Debug.crash "Tried to reference a node that does't exist" 
+
+-- Add a new node to the graph 
+addNode : UkkonenTree -> (UkkonenTree, NodeId)
+addNode tree = let
+    count = IntDict.size tree
+  in
+    (IntDict.insert size emptyNode tree count)
 
 
 -- Creates a new empty node
 emptyNode : UkkonenNode
-emptyNode = UkkonenNode (Dict.empty) Nothing
+emptyNode = {edges = Dict.empty, suffixLink = Nothing}
 
 
 -- Creates a new unbound edge
-unboundEdge : Int -> UkkonenEdge
-unboundEdge fromIndex = {
-  pointingTo = emptyNode,
-  from = fromIndex,
-  to = CurrentEnd }
+unboundEdge : NodeId -> Int -> UkkonenEdge
+unboundEdge nodeId labelStart = {
+  pointingTo = nodeId,
+  labelStart = labelStart,
+  labelEnd = EndOfString }
 
 
 -- Create a new, unbound edge from `activePoint` that starts with `char`
@@ -109,16 +133,17 @@ apCreateEdge activePoint i char = let
 
 
 -- Move `activePoint` onto the edge that starts with `char`
-apAdvanceToEdge : ActivePoint-> UkkonenEdge -> ActivePoint
-apAdvanceToEdge activePoint newEdge = 
-  { activePoint | edge <- Just (newEdge, 1) }
+apAdvanceToEdge : ActivePoint-> Char -> ActivePoint
+apAdvanceToEdge activePoint char =
+  { activePoint | edge <- Just (char, 1) }
 
 
 -- Move another step on the active edge (possibly moving off of it onto a node)
-apAdvanceOnEdge : ActivePoint -> (UkkonenEdge, Int) -> ActivePoint
-apAdvanceOnEdge activePoint (edge, edgeSteps) =
+apAdvanceOnEdge : ActivePoint -> ActivePoint
+apAdvanceOnEdge activePoint = let
+      edge = getActiveEdge activePoint char
   case edge.to of
-    CurrentEnd -> { activePoint | edge <- Just (edge, edgeSteps + 1) }
+    EndOfString -> { activePoint | edge <- Just (edge, edgeSteps + 1) }
     Definite to ->
       if (to - edge.from) - 1 == edgeSteps then
         { activePoint | 
@@ -126,8 +151,3 @@ apAdvanceOnEdge activePoint (edge, edgeSteps) =
           edge <- Just (edge, 0) }
       else
         { activePoint | edge <- Just (edge, edgeSteps + 1) }
-
-
--- Split the current edge at the shared prefix, resulting in two new nodes
-apSplitEdge : ActivePoint -> (UkkonenEdge, Int) -> ActivePoint
-apSplitEdge activePoint (edge, edgeSteps) = activePoint
