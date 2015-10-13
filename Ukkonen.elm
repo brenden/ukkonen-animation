@@ -48,7 +48,7 @@ insert state char =
         -- If an edge starting with the character already exists at this node
         case getEdge tree activePoint.nodeId char of
           Just edge -> { state |
-            activePoint <- apAdvanceToEdge activePoint char,
+            activePoint <- apSetEdge tree activePoint char 1,
             remainder <- tree.remainder + 1 }
 
           Nothing -> let
@@ -56,28 +56,32 @@ insert state char =
             in
               { state |
                 tree <- addEdge newTree activePoint.nodeId newId char i,
-                activePoint <- apAdvanceToEdge activePoint char }
+                activePoint <- apSetEdge tree activePoint char 1 }
 
       Just (edgeChar, edgeSteps) ->
-        let
-          edge = getActiveEdge activePoint edgeChar
-          -- This is the index of the input string that the current edge
-          -- location points to.
-          currentStringIndex = edge.from + edgeSteps
-        in
-          -- If the new suffix is already implicitly present in the tree
-          case Array.get currentStringIndex tree.string of
-            Just c ->
-              if char == c then
-                { tree |
-                  activePoint <-
-                    apAdvanceOnEdge tree activePoint edgeChar edgeSteps
-                  remainder <- tree.remainder + 1 }
-              else tree
-                --{ tree |
-                --  activePoint <- apSplitEdge activePoint (edge, edgeSteps),
-                --  remainder <- tree.remainder - 1 }
-            Nothing -> tree
+        case getEdge tree activePoint.nodeId edgeChar of
+          Just edge -> 
+            let
+              -- This is the index of the input string that the current edge
+              -- location points to.
+              currentStringIndex = edge.from + edgeSteps
+            in
+              -- If the new suffix is already implicitly present in the tree
+              case Array.get currentStringIndex tree.string of
+                Just c ->
+                  if char == c then
+                    { tree |
+                      activePoint 
+                        <- apSetEdge tree activePoint edgeChar edgeSteps + 1,
+                      remainder <- tree.remainder + 1 }
+                  else tree
+                    --{ tree |
+                    --  activePoint <- apSplitEdge activePoint (edge, edgeSteps),
+                    --  remainder <- tree.remainder - 1 }
+                Nothing ->
+                  Debug.crash "Edge index isn't within the input string"
+          Nothing ->
+            Debug.crash "Active point is set to an edge that doesn't exist"
 
 
 -- Get the edge that starts with `char`
@@ -99,9 +103,10 @@ addEdge tree fromId toId char labelStart = let
 
 -- Get the node associated with given id
 getNode : UkkonenTree -> NodeId -> UkkonenNode
-getNode tree nodeId = case IntDict.get fromId tree of
+getNode tree nodeId = case IntDict.get nodeId tree of
   Just node -> node
   Nothing -> Debug.crash "Tried to reference a node that does't exist" 
+
 
 -- Add a new node to the graph 
 addNode : UkkonenTree -> (UkkonenTree, NodeId)
@@ -109,7 +114,6 @@ addNode tree = let
     count = IntDict.size tree
   in
     (IntDict.insert size emptyNode tree count)
-
 
 -- Creates a new empty node
 emptyNode : UkkonenNode
@@ -133,21 +137,6 @@ apCreateEdge activePoint i char = let
 
 
 -- Move `activePoint` onto the edge that starts with `char`
-apAdvanceToEdge : ActivePoint-> Char -> ActivePoint
-apAdvanceToEdge activePoint char =
-  { activePoint | edge <- Just (char, 1) }
-
-
--- Move another step on the active edge (possibly moving off of it onto a node)
-apAdvanceOnEdge : ActivePoint -> ActivePoint
-apAdvanceOnEdge activePoint = let
-      edge = getActiveEdge activePoint char
-  case edge.to of
-    EndOfString -> { activePoint | edge <- Just (edge, edgeSteps + 1) }
-    Definite to ->
-      if (to - edge.from) - 1 == edgeSteps then
-        { activePoint | 
-          node <- edge.pointingTo,
-          edge <- Just (edge, 0) }
-      else
-        { activePoint | edge <- Just (edge, edgeSteps + 1) }
+apSetEdge : UkkonenTree -> ActivePoint-> Char -> Int -> ActivePoint
+apSetEdge tree activePoint char labelStart =
+  { activePoint | edge <- Just (char, labelStart) }
