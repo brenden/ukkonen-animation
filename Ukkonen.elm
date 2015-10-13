@@ -11,9 +11,9 @@ type alias UkkonenNode = {
   edges:Dict Char UkkonenEdge,
   suffixLink:Maybe NodeId}
 
-type alias UkkonenEdge = { 
+type alias UkkonenEdge = {
   pointingTo:NodeId,
-  labelStart:Int, 
+  labelStart:Int,
   labelEnd:ClosingIndex }
 
 type alias ActivePoint = {
@@ -33,7 +33,7 @@ insert : UkkonenState -> Char -> UkkonenState
 insert state char =
   let
     -- Append the new character to the tree's input string
-    state = { state | string <- push char tree.string }
+    state = { state | string <- push char state.string }
 
     -- Get convenient references to the tree record's fields
     {tree, remainder, activePoint, string} = state
@@ -60,19 +60,19 @@ insert state char =
 
       Just (edgeChar, edgeSteps) ->
         case getEdge tree activePoint.nodeId edgeChar of
-          Just edge -> 
+          Just edge ->
             let
               -- This is the index of the input string that the current edge
               -- location points to.
-              currentStringIndex = edge.from + edgeSteps
+              currentStringIndex = edge.labelStart + edgeSteps
             in
               -- If the new suffix is already implicitly present in the tree
               case Array.get currentStringIndex tree.string of
                 Just c ->
                   if char == c then
                     { tree |
-                      activePoint 
-                        <- apSetEdge tree activePoint edgeChar edgeSteps + 1,
+                      activePoint
+                        <- apSetEdge tree activePoint edgeChar (edgeSteps + 1),
                       remainder <- tree.remainder + 1 }
                   else tree
                     --{ tree |
@@ -105,15 +105,15 @@ addEdge tree fromId toId char labelStart = let
 getNode : UkkonenTree -> NodeId -> UkkonenNode
 getNode tree nodeId = case IntDict.get nodeId tree of
   Just node -> node
-  Nothing -> Debug.crash "Tried to reference a node that does't exist" 
+  Nothing -> Debug.crash "Tried to reference a node that does't exist"
 
 
--- Add a new node to the graph 
+-- Add a new node to the graph
 addNode : UkkonenTree -> (UkkonenTree, NodeId)
 addNode tree = let
     count = IntDict.size tree
   in
-    (IntDict.insert size emptyNode tree count)
+    (IntDict.insert count emptyNode tree, count)
 
 -- Creates a new empty node
 emptyNode : UkkonenNode
@@ -126,14 +126,6 @@ unboundEdge nodeId labelStart = {
   pointingTo = nodeId,
   labelStart = labelStart,
   labelEnd = EndOfString }
-
-
--- Create a new, unbound edge from `activePoint` that starts with `char`
-apCreateEdge : ActivePoint -> Int -> Char -> ActivePoint
-apCreateEdge activePoint i char = let
-    newEdge = unboundEdge i
-  in
-    { activePoint | node <- addEdge activePoint.node char newEdge }
 
 
 -- Move `activePoint` onto the edge that starts with `char`
