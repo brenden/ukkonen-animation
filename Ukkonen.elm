@@ -24,20 +24,20 @@ type alias UkkonenState = {
   tree: UkkonenTree,
   remainder:Int,
   activePoint:ActivePoint,
-  string:Array Char }
+  string:Array Char,
+  lastSplitNode:Maybe NodeId }
 
 type ClosingIndex = Definite Int | EndOfString
 
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
-insert state char =
+insert state newChar =
   let
-
     -- Append the new character to the tree's input string
-    state = { state | string <- push char state.string }
+    state = { state | string <- push newChar state.string }
 
     -- Get convenient references to the state record's fields
-    {tree, remainder, activePoint, string} = state
+    {tree, remainder, activePoint, string, lastSplitNode} = state
 
     -- Get the index of the character being inserted
     i = Array.length string - 1
@@ -47,12 +47,12 @@ insert state char =
       -- The case that there's currently no active edge, i.e the active point
       -- is a node in the suffix tree
       Nothing ->
-        case getEdge tree activePoint.nodeId char of
+        case getEdge tree activePoint.nodeId newChar of
 
           -- If an edge starting with the new character already exists at this
           -- node, then set the active edge to that edge.
           Just edge -> { state |
-            activePoint <- apSetEdge tree activePoint char 1,
+            activePoint <- apSetEdge tree activePoint newChar 1,
             remainder <- tree.remainder + 1 }
 
           -- Otherwise we need to create a new edge pointing from this node
@@ -63,69 +63,106 @@ insert state char =
                 tree <- addEdge newTree
                                 activePoint.nodeId
                                 newId
-                                char
+                                newChar
                                 i
                                 EndOfString,
-                activePoint <- apSetEdge tree activePoint char 1 }
+                activePoint <- apSetEdge tree activePoint newChar 1 }
 
       -- The case that there is an active edge
       Just (edgeChar, edgeSteps) ->
-        case getEdge tree activePoint.nodeId edgeChar of
-          Just edge ->
-            let
+        let
+          activeEdge = Maybe.withDefault
+            (Debug.crash "Active point is set to an edge that doesn't exist")
+            (getEdge tree activePoint.nodeId edgeChar)
 
-              -- This is the index of the input string that the current edge
-              -- location points to.
-              currentStringIndex = edge.labelStart + edgeSteps
+          -- This is the index of the input string that the current edge
+          -- location points to.
+          currentStringIndex = activeEdge.labelStart + edgeSteps
+
+          -- The character that the current edge location represents
+          c = getChar string currentStringIndex
+        in
+          -- If the new suffix is already implicitly present in the
+          -- tree, then step forward on the active edge and increment
+          -- the remainder.
+          if newChar == c then
+            { state |
+              activePoint <- apSetEdge tree
+                                       activePoint
+                                       edgeChar
+                                       (edgeSteps + 1),
+              remainder <- tree.remainder + 1 }
+
+          -- Otherwise, the new character being inserted is different from the
+          -- character pointed to by the active point, so the active edge needs
+          -- to be split.
+          else let
+              
+              (newTree1, newNodeId1) = addNode tree
+              (newTree2, newNodeId2) = addNode newTree1
+              newTree3 = addEdge newTree2
+                                 activeEdge.pointingTo
+                                 newNodeId1
+                                 newChar
+                                 i
+                                 EndOfString
+              newTree4 = addEdge newTree3
+                                 activeEdge.pointingTo
+                                 newNodeId2
+                                 c
+                                 currentStringIndex
+                                 EndOfString
+
+              -- Common edge shared by the suffixes
+              newTree5 = addEdge newTree4
+                                 activePoint.nodeId
+                                 activeEdge.pointingTo
+                                 edgeChar
+                                 activeEdge.labelStart
+                                 (Definite currentStringIndex)
+
+              newTree6 = case lastSplitNode of
+                Just nodeId -> setSuffixLink newTree5
+                                             nodeId
+                                             activeEdge.pointingTo
+                Nothing -> newTree5
+
+              -- Update the active point
+              newActivePoint = if activePoint.nodeId == 0 then
+                  { activePoint
+                    | edge <- Just (getChar string (i - 1), edgeSteps - 1) }
+                else let
+                    activeNode = getNode tree activePoint.nodeId
+                  in
+                    case activeNode.suffixLink of
+                      Just nodeId -> { activePoint | node <- nodeId }
+                      Nothing -> { activePoint | node <- 0 }
             in
-              case Array.get currentStringIndex tree.string of
-                Just c ->
+              { state |
+                tree <- newTree5,
+                --activePoint <- newActivePoint,
+                remainder <- tree.remainder - 1,
+                lastSplitNode <- Just activeEdge.pointingTo }
 
-                  -- If the new suffix is already implicitly present in the
-                  -- tree, then step forward on the active edge and increment
-                  -- the remainder.
-                  if char == c then
-                    { state |
-                      activePoint <- apSetEdge tree
-                                               activePoint
-                                               edgeChar
-                                               (edgeSteps + 1),
-                      remainder <- tree.remainder + 1 }
 
-                  -- Otherwise, the active edge needs to be split, forming two
-                  -- new edges.
-                  else let
-                      (newTree1, newNodeId1) = addNode tree
-                      (newTree2, newNodeId2) = addNode newTree1
-                      newTree3 = addEdge newTree2
-                                         edge.pointingTo
-                                         newNodeId1
-                                         char
-                                         i
-                                         EndOfString
-                      newTree4 = addEdge newTree3
-                                         edge.pointingTo
-                                         newNodeId2
-                                         c
-                                         currentStringIndex
-                                         EndOfString
+-- Move `activePoint` onto the edge that starts with `char`
+-- TODO handle walking off edge
+apSetEdge : UkkonenTree -> ActivePoint-> Char -> Int -> ActivePoint
+apSetEdge tree activePoint char labelStart =
+  { activePoint | edge <- Just (char, labelStart) }
 
-                      -- Common edge shared by the suffixes
-                      newTree5 = addEdge newTree4
-                                         activePoint.nodeId
-                                         edge.pointingTo
-                                         edgeChar
-                                         edge.labelStart
-                                         (Definite currentStringIndex)
-                    in
-                      { state |
-                        tree <- newTree5,
-                        remainder <- tree.remainder - 1 }
-                Nothing ->
-                  Debug.crash "Edge index isn't within the input string"
-          Nothing ->
-            Debug.crash "Active point is set to an edge that doesn't exist"
 
+-- Convenience method for looking up the character at the given position in the
+-- input string
+getChar : Array Char -> Int -> Char
+getChar str i = case Array.get i str of
+  Just c -> c
+  Nothing -> Debug.crash "Tried to look up character out of string bounds"
+
+
+--
+-- Tree Manipulation Methods
+--
 
 -- Get the edge that starts with `char`
 getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge
@@ -135,13 +172,20 @@ getEdge tree nodeId char = case IntDict.get nodeId tree of
 
 
 -- Add `edge` that starts with `char`
-addEdge : UkkonenTree -> NodeId -> NodeId -> Char -> Int -> ClosingIndex
-          -> UkkonenTree
+addEdge : UkkonenTree ->
+          NodeId ->
+          NodeId ->
+          Char ->
+          Int ->
+          ClosingIndex ->
+          UkkonenTree
 addEdge tree fromId toId char labelStart labelEnd = let
     node = getNode tree fromId
-    newEdges = Dict.insert char
-                           (createEdge toId labelStart labelEnd)
-                           node.edges
+    newEdge = {
+      pointingTo = toId,
+      labelStart = labelStart,
+      labelEnd = labelEnd }
+    newEdges = Dict.insert char newEdge node.edges
     newNode = { node | edges <- newEdges }
   in
     IntDict.insert fromId newNode tree
@@ -158,25 +202,17 @@ getNode tree nodeId = case IntDict.get nodeId tree of
 addNode : UkkonenTree -> (UkkonenTree, NodeId)
 addNode tree = let
     count = IntDict.size tree
+    newNode = {edges = Dict.empty, suffixLink = Nothing}
+    newTree = IntDict.insert count newNode tree
   in
-    (IntDict.insert count createNode tree, count)
+    (newTree, count)
 
 
--- Creates a new empty node
-createNode : UkkonenNode
-createNode = {edges = Dict.empty, suffixLink = Nothing}
+-- Set the suffix link of a node
+setSuffixLink : UkkonenTree -> NodeId -> NodeId -> UkkonenTree
+setSuffixLink tree fromId toId = let
+    node = getNode tree fromId
+  in
+    IntDict.insert fromId { node | suffixLink <- Just toId } tree
 
 
--- Creates a new unbound edge
-createEdge : NodeId -> Int -> ClosingIndex -> UkkonenEdge
-createEdge nodeId labelStart labelEnd = {
-  pointingTo = nodeId,
-  labelStart = labelStart,
-  labelEnd = labelEnd }
-
-
--- Move `activePoint` onto the edge that starts with `char`
--- TODO handle walking off edge
-apSetEdge : UkkonenTree -> ActivePoint-> Char -> Int -> ActivePoint
-apSetEdge tree activePoint char labelStart =
-  { activePoint | edge <- Just (char, labelStart) }
