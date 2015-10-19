@@ -135,12 +135,12 @@ insert state newChar =
                     activeNode = getNode tree activePoint.nodeId
                   in
                     case activeNode.suffixLink of
-                      Just nodeId -> { activePoint | node <- nodeId }
-                      Nothing -> { activePoint | node <- 0 }
+                      Just nodeId -> { activePoint | nodeId <- nodeId }
+                      Nothing -> { activePoint | nodeId <- 0 }
             in
               { state |
                 tree <- newTree5,
-                --activePoint <- newActivePoint,
+                activePoint <- newActivePoint,
                 remainder <- tree.remainder - 1,
                 lastSplitNode <- Just activeEdge.pointingTo }
 
@@ -214,5 +214,3 @@ setSuffixLink tree fromId toId = let
     node = getNode tree fromId
   in
     IntDict.insert fromId { node | suffixLink <- Just toId } tree
-
-
