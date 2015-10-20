@@ -29,6 +29,8 @@ type alias UkkonenState = {
 
 type ClosingIndex = Definite Int | EndOfString
 
+
+
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
 insert state newChar =
@@ -57,10 +59,10 @@ insert state newChar =
 
           -- Otherwise we need to create a new edge pointing from this node
           Nothing -> let
-              (newTree, newId) = addNode tree
+              (newTree, newId) = setNode tree
             in
               { state |
-                tree <- addEdge newTree
+                tree <- setEdge newTree
                                 activePoint.nodeId
                                 newId
                                 newChar
@@ -97,16 +99,15 @@ insert state newChar =
           -- character pointed to by the active point, so the active edge needs
           -- to be split.
           else let
-              
-              (newTree1, newNodeId1) = addNode tree
-              (newTree2, newNodeId2) = addNode newTree1
-              newTree3 = addEdge newTree2
+              (newTree1, newNodeId1) = setNode tree
+              (newTree2, newNodeId2) = setNode newTree1
+              newTree3 = setEdge newTree2
                                  activeEdge.pointingTo
                                  newNodeId1
                                  newChar
                                  i
                                  EndOfString
-              newTree4 = addEdge newTree3
+              newTree4 = setEdge newTree3
                                  activeEdge.pointingTo
                                  newNodeId2
                                  c
@@ -114,7 +115,7 @@ insert state newChar =
                                  EndOfString
 
               -- Common edge shared by the suffixes
-              newTree5 = addEdge newTree4
+              newTree5 = setEdge newTree4
                                  activePoint.nodeId
                                  activeEdge.pointingTo
                                  edgeChar
@@ -172,14 +173,14 @@ getEdge tree nodeId char = case IntDict.get nodeId tree of
 
 
 -- Add `edge` that starts with `char`
-addEdge : UkkonenTree ->
+setEdge : UkkonenTree ->
           NodeId ->
           NodeId ->
           Char ->
           Int ->
           ClosingIndex ->
           UkkonenTree
-addEdge tree fromId toId char labelStart labelEnd = let
+setEdge tree fromId toId char labelStart labelEnd = let
     node = getNode tree fromId
     newEdge = {
       pointingTo = toId,
@@ -199,8 +200,8 @@ getNode tree nodeId = case IntDict.get nodeId tree of
 
 
 -- Add a new node to the graph
-addNode : UkkonenTree -> (UkkonenTree, NodeId)
-addNode tree = let
+setNode : UkkonenTree -> (UkkonenTree, NodeId)
+setNode tree = let
     count = IntDict.size tree
     newNode = {edges = Dict.empty, suffixLink = Nothing}
     newTree = IntDict.insert count newNode tree
