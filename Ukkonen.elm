@@ -30,7 +30,6 @@ type alias UkkonenState = {
 type ClosingIndex = Definite Int | EndOfString
 
 
-
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
 insert state newChar =
@@ -54,7 +53,7 @@ insert state newChar =
           -- If an edge starting with the new character already exists at this
           -- node, then set the active edge to that edge.
           Just edge -> { state |
-            activePoint <- apSetEdge tree activePoint newChar 1,
+            activePoint <- apSetEdge tree string activePoint newChar 1,
             remainder <- tree.remainder + 1 }
 
           -- Otherwise we need to create a new edge pointing from this node
@@ -68,7 +67,7 @@ insert state newChar =
                                 newChar
                                 i
                                 EndOfString,
-                activePoint <- apSetEdge tree activePoint newChar 1 }
+                activePoint <- apSetEdge tree string activePoint newChar 1 }
 
       -- The case that there is an active edge
       Just (edgeChar, edgeSteps) ->
@@ -90,6 +89,7 @@ insert state newChar =
           if newChar == c then
             { state |
               activePoint <- apSetEdge tree
+                                       string
                                        activePoint
                                        edgeChar
                                        (edgeSteps + 1),
@@ -147,10 +147,29 @@ insert state newChar =
 
 
 -- Move `activePoint` onto the edge that starts with `char`
--- TODO handle walking off edge
-apSetEdge : UkkonenTree -> ActivePoint-> Char -> Int -> ActivePoint
-apSetEdge tree activePoint char labelStart =
-  { activePoint | edge <- Just (char, labelStart) }
+apSetEdge : UkkonenTree ->
+            Array Char ->
+            ActivePoint ->
+            Char ->
+            Int ->
+            ActivePoint
+apSetEdge tree string activePoint char n = let
+    activeEdge = Maybe.withDefault
+      (Debug.crash ("Tried to set the active edge to an edge that doesn't start"
+         ++ " at the active node"))
+      (getEdge tree activePoint.nodeId char)
+    activeEdgeLength = case activeEdge.labelEnd of
+      EndOfString -> (Array.length string) - activeEdge.labelStart
+      Definite end -> end - activeEdge.labelStart
+  in
+    if n < activeEdgeLength then
+      { activePoint | edge <- Just (char, n) }
+    else
+      apSetEdge tree
+                string
+                { activePoint | nodeId <- activeEdge.pointingTo }
+                (getChar string (activeEdge.labelStart + activeEdgeLength))
+                (n - activeEdgeLength)
 
 
 -- Convenience method for looking up the character at the given position in the
