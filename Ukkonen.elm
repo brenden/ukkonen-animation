@@ -1,3 +1,5 @@
+module Ukkonen (initialState, insert) where
+
 import IntDict exposing (..)
 import Dict exposing (..)
 import Array exposing (..)
@@ -21,7 +23,7 @@ type alias ActivePoint = {
   edge:Maybe (Char, Int) }
 
 type alias UkkonenState = {
-  tree: UkkonenTree,
+  tree:UkkonenTree,
   remainder:Int,
   activePoint:ActivePoint,
   string:Array Char,
@@ -29,6 +31,17 @@ type alias UkkonenState = {
 
 type ClosingIndex = Definite Int | EndOfString
 
+
+initialState : UkkonenState
+initialState = {
+  tree = IntDict.empty,
+  remainder = 1,
+  activePoint = {
+    nodeId = 0,
+    edge = Nothing
+  },
+  string = Array.empty,
+  lastSplitNode = Nothing }
 
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
