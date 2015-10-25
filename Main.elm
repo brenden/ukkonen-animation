@@ -7,5 +7,6 @@ import Ukkonen exposing (..)
 main = let
     state1 = Ukkonen.initialState
     state2 = Ukkonen.insert state1 'a'
+    state3 = Ukkonen.insert state2 'b'
   in
-    show state2.remainder
+    show state3.remainder

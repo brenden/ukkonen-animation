@@ -174,7 +174,7 @@ apSetEdge tree string activePoint char n = let
       EndOfString -> (Array.length string) - activeEdge.labelStart
       Definite end -> end - activeEdge.labelStart
   in
-    if n < activeEdgeLength then
+    if n <= activeEdgeLength then
       { activePoint | edge <- Just (char, n) }
     else
       apSetEdge tree
