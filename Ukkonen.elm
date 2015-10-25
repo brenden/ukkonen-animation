@@ -33,22 +33,25 @@ type ClosingIndex = Definite Int | EndOfString
 
 
 initialState : UkkonenState
-initialState = {
-  tree = IntDict.empty,
-  remainder = 1,
-  activePoint = {
-    nodeId = 0,
-    edge = Nothing
-  },
-  string = Array.empty,
-  lastSplitNode = Nothing }
+initialState = let
+    newNode = {edges = Dict.empty, suffixLink = Nothing}
+    tree = IntDict.insert 0 newNode IntDict.empty
+  in {
+    tree = tree,
+    remainder = 1,
+    activePoint = {
+      nodeId = 0,
+      edge = Nothing
+    },
+    string = Array.empty,
+    lastSplitNode = Nothing }
 
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
-insert state newChar =
+insert initState newChar =
   let
     -- Append the new character to the tree's input string
-    state = { state | string <- push newChar state.string }
+    state = { initState | string <- push newChar initState.string }
 
     -- Get convenient references to the state record's fields
     {tree, remainder, activePoint, string, lastSplitNode} = state
@@ -67,27 +70,26 @@ insert state newChar =
           -- node, then set the active edge to that edge.
           Just edge -> { state |
             activePoint <- apSetEdge tree string activePoint newChar 1,
-            remainder <- tree.remainder + 1 }
+            remainder <- state.remainder + 1 }
 
           -- Otherwise we need to create a new edge pointing from this node
           Nothing -> let
               (newTree, newId) = setNode tree
+              newTree2 = setEdge newTree
+                                 activePoint.nodeId
+                                 newId
+                                 newChar
+                                 i
+                                 EndOfString
             in
               { state |
-                tree <- setEdge newTree
-                                activePoint.nodeId
-                                newId
-                                newChar
-                                i
-                                EndOfString,
-                activePoint <- apSetEdge tree string activePoint newChar 1 }
+                tree <- newTree2,
+                activePoint <- apSetEdge newTree2 string activePoint newChar 1 }
 
       -- The case that there is an active edge
       Just (edgeChar, edgeSteps) ->
         let
-          activeEdge = Maybe.withDefault
-            (Debug.crash "Active point is set to an edge that doesn't exist")
-            (getEdge tree activePoint.nodeId edgeChar)
+          activeEdge = getEdgeOrCrash tree activePoint.nodeId edgeChar
 
           -- This is the index of the input string that the current edge
           -- location points to.
@@ -106,7 +108,7 @@ insert state newChar =
                                        activePoint
                                        edgeChar
                                        (edgeSteps + 1),
-              remainder <- tree.remainder + 1 }
+              remainder <- state.remainder + 1 }
 
           -- Otherwise, the new character being inserted is different from the
           -- character pointed to by the active point, so the active edge needs
@@ -155,7 +157,7 @@ insert state newChar =
               { state |
                 tree <- newTree5,
                 activePoint <- newActivePoint,
-                remainder <- tree.remainder - 1,
+                remainder <- state.remainder - 1,
                 lastSplitNode <- Just activeEdge.pointingTo }
 
 
@@ -167,10 +169,7 @@ apSetEdge : UkkonenTree ->
             Int ->
             ActivePoint
 apSetEdge tree string activePoint char n = let
-    activeEdge = Maybe.withDefault
-      (Debug.crash ("Tried to set the active edge to an edge that doesn't start"
-         ++ " at the active node"))
-      (getEdge tree activePoint.nodeId char)
+    activeEdge = getEdgeOrCrash tree activePoint.nodeId char
     activeEdgeLength = case activeEdge.labelEnd of
       EndOfString -> (Array.length string) - activeEdge.labelStart
       Definite end -> end - activeEdge.labelStart
@@ -202,6 +201,10 @@ getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge
 getEdge tree nodeId char = case IntDict.get nodeId tree of
   Just node -> Dict.get char node.edges
   Nothing -> Debug.crash "Active point is set to a node that doesn't exist"
+
+getEdgeOrCrash tree nodeId char = case getEdge tree nodeId char of
+  Just edge -> edge
+  Nothing -> Debug.crash "Tried to reference an edge that doesn't exist"
 
 
 -- Add `edge` that starts with `char`
