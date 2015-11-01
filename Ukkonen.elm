@@ -1,4 +1,4 @@
-module Ukkonen (initialState, insert) where
+module Ukkonen (initialState, insert, toString) where
 
 import IntDict exposing (..)
 import Dict exposing (..)
@@ -25,11 +25,12 @@ type alias ActivePoint = {
 type alias UkkonenState = {
   tree:UkkonenTree,
   remainder:Int,
-  activePoint:ActivePoint,
+    activePoint:ActivePoint,
   string:Array Char,
   lastSplitNode:Maybe NodeId }
 
 type ClosingIndex = Definite Int | EndOfString
+
 
 
 initialState : UkkonenState
@@ -195,6 +196,23 @@ getChar str i = case Array.get i str of
 --
 -- Tree Manipulation Methods
 --
+
+-- Prints out a representation of the tree
+toString : UkkonenTree -> String
+toString = toString' 0 0
+
+toString' level rootId tree = let
+    root = getNode tree rootId
+  in
+    (String.repeat level "  ") ++ (Basics.toString rootId) ++
+      (Basics.toString '\n') ++
+        (String.concat (Dict.values
+          (Dict.map ( \edgeLabel -> \edge ->
+            (Basics.toString edgeLabel) ++ " -> " ++ (toString' (level + 1)
+                                                                edge.pointingTo
+                                                                tree))
+                    root.edges)))
+
 
 -- Get the edge that starts with `char`
 getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge

@@ -9,4 +9,4 @@ main = let
     state2 = Ukkonen.insert state1 'a'
     state3 = Ukkonen.insert state2 'b'
   in
-    show state3.remainder
+    show (Ukkonen.toString state3.tree)
