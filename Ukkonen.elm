@@ -1,4 +1,4 @@
-module Ukkonen (initialState, insert, toString) where
+module Ukkonen (buildTree, toString) where
 
 import IntDict exposing (..)
 import Dict exposing (..)
@@ -32,7 +32,7 @@ type alias UkkonenState = {
 type ClosingIndex = Definite Int | EndOfString
 
 
-
+-- Returns the initial state for the Ukkonen algorithm
 initialState : UkkonenState
 initialState = let
     newNode = {edges = Dict.empty, suffixLink = Nothing}
@@ -46,6 +46,7 @@ initialState = let
     },
     string = Array.empty,
     lastSplitNode = Nothing }
+
 
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
@@ -84,8 +85,8 @@ insert initState newChar =
                                  EndOfString
             in
               { state |
-                tree <- newTree2,
-                activePoint <- apSetEdge newTree2 string activePoint newChar 1 }
+                tree <- newTree2 }
+                --activePoint <- apSetEdge newTree2 string activePoint newChar 1 }
 
       -- The case that there is an active edge
       Just (edgeChar, edgeSteps) ->
@@ -194,7 +195,7 @@ getChar str i = case Array.get i str of
 
 
 --
--- Tree Manipulation Methods
+-- Utility methods
 --
 
 -- Prints out a representation of the tree
@@ -205,14 +206,35 @@ toString' level rootId tree = let
     root = getNode tree rootId
   in
     (String.repeat level "  ") ++ (Basics.toString rootId) ++
-      (Basics.toString '\n') ++
+      newLine ++
         (String.concat (Dict.values
           (Dict.map ( \edgeLabel -> \edge ->
-            (Basics.toString edgeLabel) ++ " -> " ++ (toString' (level + 1)
-                                                                edge.pointingTo
-                                                                tree))
+            (Basics.toString edgeLabel) ++ "->" ++ newLine ++
+              (toString' (level + 1)
+                         edge.pointingTo
+                         tree))
                     root.edges)))
 
+
+-- Convenince method for bulding strings that contain newlines
+newLine = """
+"""
+
+
+-- Runs the given string through the Ukkonen algorithm and retuns the
+-- final state
+buildTree : String -> UkkonenTree
+buildTree string = buildTree' initialState (String.toList string)
+
+buildTree' currentState string =
+  case string of
+    [] -> currentState.tree
+    c::rest -> buildTree' (insert currentState c) rest
+
+
+--
+-- Tree manipulation methods
+--
 
 -- Get the edge that starts with `char`
 getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge
