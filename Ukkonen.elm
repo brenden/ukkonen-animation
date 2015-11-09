@@ -50,7 +50,8 @@ initialState = let
 
 -- Add another character to the tree
 insert : UkkonenState -> Char -> UkkonenState
-insert initState newChar =
+insert initState newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
+  ++ newLine ++ (toString initState.tree)) <|
   let
     -- Append the new character to the tree's input string
     state = { initState | string <- push newChar initState.string }
@@ -146,6 +147,7 @@ insert initState newChar =
                 Nothing -> newTree5
 
               -- Update the active point
+              -- TODO: need to insert activeEdge if it doesn't exist yet
               newActivePoint = if activePoint.nodeId == 0 then
                   { activePoint
                     | edge <- Just (getChar string (i - 1), edgeSteps - 1) }
@@ -155,13 +157,18 @@ insert initState newChar =
                     case activeNode.suffixLink of
                       Just nodeId -> { activePoint | nodeId <- nodeId }
                       Nothing -> { activePoint | nodeId <- 0 }
-            in
-              { state |
+
+              -- Update the state
+              newState = { state |
                 tree <- newTree5,
                 activePoint <- newActivePoint,
                 remainder <- state.remainder - 1,
                 lastSplitNode <- Just activeEdge.pointingTo }
-
+            in
+              if newState.remainder == 1 then
+                newState
+              else
+                insert newState newChar
 
 -- Move `activePoint` onto the edge that starts with `char`
 apSetEdge : UkkonenTree ->
@@ -204,12 +211,13 @@ toString = toString' 0 0
 
 toString' level rootId tree = let
     root = getNode tree rootId
+    spaces = (String.repeat level "  ")
   in
-    (String.repeat level "  ") ++ (Basics.toString rootId) ++
+    spaces ++ (Basics.toString rootId) ++
       newLine ++
         (String.concat (Dict.values
           (Dict.map ( \edgeLabel -> \edge ->
-            (Basics.toString edgeLabel) ++ "->" ++ newLine ++
+            spaces ++ (Basics.toString edgeLabel) ++ "->" ++ newLine ++
               (toString' (level + 1)
                          edge.pointingTo
                          tree))
@@ -244,7 +252,8 @@ getEdge tree nodeId char = case IntDict.get nodeId tree of
 
 getEdgeOrCrash tree nodeId char = case getEdge tree nodeId char of
   Just edge -> edge
-  Nothing -> Debug.crash "Tried to reference an edge that doesn't exist"
+  Nothing -> Debug.crash ("Tried to reference edge "
+    ++ (Basics.toString (nodeId, char)) ++ ", which doesn't exist")
 
 
 -- Add `edge` that starts with `char`
