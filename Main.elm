@@ -5,7 +5,7 @@ import Graphics.Element exposing (show)
 import Ukkonen exposing (..)
 
 main = let
-    string = "abcabxabxyz"
+    string = "abcabxabcd"
     tree = Ukkonen.buildTree string
   in
     pre [] [text (Ukkonen.toString tree)]
