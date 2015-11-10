@@ -1,22 +1,11 @@
 module Ukkonen (buildTree, toString) where
 
+import UkkonenAlgorithm exposing (..)
 import IntDict exposing (..)
 import Dict exposing (..)
 import Array exposing (..)
 import String exposing (..)
 import Debug
-
-type alias NodeId = Int
-type alias UkkonenTree = IntDict UkkonenNode
-
-type alias UkkonenNode = {
-  edges:Dict Char UkkonenEdge,
-  suffixLink:Maybe NodeId}
-
-type alias UkkonenEdge = {
-  pointingTo:NodeId,
-  labelStart:Int,
-  labelEnd:ClosingIndex }
 
 type alias ActivePoint = {
   nodeId:NodeId,
@@ -80,7 +69,7 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
 
           -- Otherwise we need to create a new edge pointing from this node
           Nothing -> let
-              (newTree, newId) = setNode tree
+              (newTree, newId) = addNode tree
               newTree2 = setEdge newTree
                                  activePoint.nodeId
                                  newId
@@ -120,8 +109,8 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
               -- character pointed to by the active point, so the active edge needs
               -- to be split.
               else let
-                  (newTree1, newNodeId1) = setNode tree
-                  (newTree2, newNodeId2) = setNode newTree1
+                  (newTree1, newNodeId1) = addNode tree
+                  (newTree2, newNodeId2) = addNode newTree1
                   newTree3 = setEdge newTree2
                                      activeEdge.pointingTo
                                      newNodeId1
@@ -174,7 +163,7 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
 
           -- Insert the new activeEdge if it doesn't exist yet
           Nothing -> let
-              (treeWithNextSuffixNode, nextSuffixNode) = setNode tree
+              (treeWithNextSuffixNode, nextSuffixNode) = addNode tree
               newActivePoint = { activePoint | edge <- Nothing }
             in
               { state | tree <- setEdge treeWithNextSuffixNode
@@ -192,20 +181,25 @@ apSetEdge : UkkonenTree ->
             Char ->
             Int ->
             ActivePoint
-apSetEdge tree string activePoint char n = let
-    activeEdge = getEdgeOrCrash tree activePoint.nodeId char
-    activeEdgeLength = case activeEdge.labelEnd of
-      EndOfString -> (Array.length string) - activeEdge.labelStart
-      Definite end -> end - activeEdge.labelStart
-  in
-    if n <= activeEdgeLength then
-      { activePoint | edge <- Just (char, n) }
-    else
-      apSetEdge tree
-                string
-                { activePoint | nodeId <- activeEdge.pointingTo }
-                (getChar string (activeEdge.labelStart + activeEdgeLength))
-                (n - activeEdgeLength)
+apSetEdge tree string activePoint char n =
+  case getEdge tree activePoint.nodeId char of
+    Just activeEdge ->
+      let
+        activeEdgeLength = case activeEdge.labelEnd of
+          EndOfString -> (Array.length string) - activeEdge.labelStart
+          Definite end -> end - activeEdge.labelStart
+      in
+        if n <= activeEdgeLength then
+          { activePoint | edge <- Just (char, n) }
+        else
+          apSetEdge tree
+                    string
+                    { activePoint | nodeId <- activeEdge.pointingTo }
+                    (getChar string (activeEdge.labelStart + activeEdgeLength))
+                    (n - activeEdgeLength)
+
+  Nothing -> Debug.crash ("Tried to reference edge "
+    ++ (Basics.toString (nodeId, char)) ++ ", which doesn't exist")
 
 
 -- Convenience method for looking up the character at the given position in the
@@ -253,64 +247,3 @@ buildTree' currentState string =
   case string of
     [] -> currentState.tree
     c::rest -> buildTree' (insert currentState c) rest
-
-
---
--- Tree manipulation methods
---
-
--- Get the edge that starts with `char`
-getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge
-getEdge tree nodeId char = case IntDict.get nodeId tree of
-  Just node -> Dict.get char node.edges
-  Nothing -> Debug.crash "Active point is set to a node that doesn't exist"
-
-getEdgeOrCrash tree nodeId char = case getEdge tree nodeId char of
-  Just edge -> edge
-  Nothing -> Debug.crash ("Tried to reference edge "
-    ++ (Basics.toString (nodeId, char)) ++ ", which doesn't exist")
-
-
--- Add `edge` that starts with `char`
-setEdge : UkkonenTree ->
-          NodeId ->
-          NodeId ->
-          Char ->
-          Int ->
-          ClosingIndex ->
-          UkkonenTree
-setEdge tree fromId toId char labelStart labelEnd = let
-    node = getNode tree fromId
-    newEdge = {
-      pointingTo = toId,
-      labelStart = labelStart,
-      labelEnd = labelEnd }
-    newEdges = Dict.insert char newEdge node.edges
-    newNode = { node | edges <- newEdges }
-  in
-    IntDict.insert fromId newNode tree
-
-
--- Get the node associated with given id
-getNode : UkkonenTree -> NodeId -> UkkonenNode
-getNode tree nodeId = case IntDict.get nodeId tree of
-  Just node -> node
-  Nothing -> Debug.crash "Tried to reference a node that does't exist"
-
-
--- Add a new node to the graph
-setNode : UkkonenTree -> (UkkonenTree, NodeId)
-setNode tree = let
-    count = IntDict.size tree
-    newNode = {edges = Dict.empty, suffixLink = Nothing}
-    newTree = IntDict.insert count newNode tree
-  in
-    (newTree, count)
-
-
--- Set the suffix link of a node
-setSuffixLink : UkkonenTree -> NodeId -> NodeId -> UkkonenTree
-setSuffixLink tree fromId toId = let
-    node = getNode tree fromId
-  in
-    IntDict.insert fromId { node | suffixLink <- Just toId } tree
