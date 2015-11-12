@@ -1,8 +1,6 @@
-module Ukkonen (buildTree, toString) where
+module UkkonenAlgorithm (buildTree) where
 
-import UkkonenAlgorithm exposing (..)
-import IntDict exposing (..)
-import Dict exposing (..)
+import UkkonenTree exposing (..)
 import Array exposing (..)
 import String exposing (..)
 import Debug
@@ -18,23 +16,18 @@ type alias UkkonenState = {
   string:Array Char,
   lastSplitNode:Maybe NodeId }
 
-type ClosingIndex = Definite Int | EndOfString
-
 
 -- Returns the initial state for the Ukkonen algorithm
 initialState : UkkonenState
-initialState = let
-    newNode = {edges = Dict.empty, suffixLink = Nothing}
-    tree = IntDict.insert 0 newNode IntDict.empty
-  in {
-    tree = tree,
-    remainder = 1,
-    activePoint = {
-      nodeId = 0,
-      edge = Nothing
-    },
-    string = Array.empty,
-    lastSplitNode = Nothing }
+initialState = {
+  tree = emptyTree,
+  remainder = 1,
+  activePoint = {
+    nodeId = 0,
+    edge = Nothing
+  },
+  string = Array.empty,
+  lastSplitNode = Nothing }
 
 
 -- Add another character to the tree
@@ -46,7 +39,7 @@ insert initState newChar = let
 
 insert' : UkkonenState -> Char -> UkkonenState
 insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
-  ++ newLine ++ (toString state.tree)) <|
+  ++ newLine ++ (UkkonenTree.toString state.tree)) <|
   let
     -- Get convenient references to the state record's fields
     {tree, remainder, activePoint, string, lastSplitNode} = state
@@ -181,8 +174,9 @@ apSetEdge : UkkonenTree ->
             Char ->
             Int ->
             ActivePoint
-apSetEdge tree string activePoint char n =
-  case getEdge tree activePoint.nodeId char of
+apSetEdge tree string activePoint char n = case getEdge tree
+                                                        activePoint.nodeId
+                                                        char of
     Just activeEdge ->
       let
         activeEdgeLength = case activeEdge.labelEnd of
@@ -198,8 +192,9 @@ apSetEdge tree string activePoint char n =
                     (getChar string (activeEdge.labelStart + activeEdgeLength))
                     (n - activeEdgeLength)
 
-  Nothing -> Debug.crash ("Tried to reference edge "
-    ++ (Basics.toString (nodeId, char)) ++ ", which doesn't exist")
+    Nothing -> Debug.crash ("Tried to reference edge "
+      ++ (Basics.toString (activePoint.nodeId, char))
+      ++ ", which doesn't exist")
 
 
 -- Convenience method for looking up the character at the given position in the
@@ -214,28 +209,6 @@ getChar str i = case Array.get i str of
 -- Utility methods
 --
 
--- Prints out a representation of the tree
-toString : UkkonenTree -> String
-toString = toString' 0 0
-
-toString' level rootId tree = let
-    root = getNode tree rootId
-    spaces = (String.repeat level "  ")
-  in
-    spaces ++ (Basics.toString rootId) ++
-      newLine ++
-        (String.concat (Dict.values
-          (Dict.map ( \edgeLabel -> \edge ->
-            spaces ++ (Basics.toString edgeLabel) ++ "->" ++ newLine ++
-              (toString' (level + 1)
-                         edge.pointingTo
-                         tree))
-                    root.edges)))
-
-
--- Convenince method for bulding strings that contain newlines
-newLine = """
-"""
 
 
 -- Runs the given string through the Ukkonen algorithm and retuns the

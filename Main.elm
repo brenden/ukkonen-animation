@@ -2,10 +2,11 @@ import Html exposing (pre, text)
 import Html.Attributes exposing (class)
 import Graphics.Element exposing (show)
 
-import Ukkonen exposing (..)
+import UkkonenTree exposing (..)
+import UkkonenAlgorithm exposing (..)
 
 main = let
     string = "abcabxabcd"
-    tree = Ukkonen.buildTree string
+    tree = UkkonenAlgorithm.buildTree string
   in
-    pre [] [text (Ukkonen.toString tree)]
+    pre [] [text (UkkonenTree.toString tree)]
