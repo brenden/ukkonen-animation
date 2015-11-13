@@ -38,9 +38,7 @@ insert initState newChar = let
     insert' state newChar
 
 insert' : UkkonenState -> Char -> UkkonenState
-insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
-  ++ newLine ++ (UkkonenTree.toString state.tree)) <|
-  let
+insert' state newChar = let
     -- Get convenient references to the state record's fields
     {tree, remainder, activePoint, string, lastSplitNode} = state
 
@@ -57,7 +55,7 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
           -- If an edge starting with the new character already exists at this
           -- node, then set the active edge to that edge.
           Just edge -> { state |
-            activePoint <- apSetEdge tree string activePoint newChar 1,
+            activePoint <- walkEdge tree string activePoint newChar 1,
             remainder <- state.remainder + 1 }
 
           -- Otherwise we need to create a new edge pointing from this node
@@ -72,7 +70,7 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
             in
               { state |
                 tree <- newTree2 }
-                --activePoint <- apSetEdge newTree2 string activePoint newChar 1 }
+                --activePoint <- walkEdge newTree2 string activePoint newChar 1 }
 
       -- The case that there is an active edge defined
       Just (edgeChar, edgeSteps) ->
@@ -91,7 +89,7 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
               -- the remainder.
               if newChar == c then
                 { state |
-                  activePoint <- apSetEdge tree
+                  activePoint <- walkEdge tree
                                            string
                                            activePoint
                                            edgeChar
@@ -135,13 +133,13 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
                   newActivePoint = if activePoint.nodeId == 0 then
                       { activePoint
                         | edge <- Just ((getChar string
-                                                (i - state.remainder + 2)),
+                                                 (i - state.remainder + 2)),
                                         edgeSteps - 1) }
                     else let
                         activeNode = getNode tree activePoint.nodeId
                       in
                         case activeNode.suffixLink of
-                          Just nodeId -> Debug.log "following suffix link" { activePoint | nodeId <- nodeId }
+                          Just nodeId -> { activePoint | nodeId <- nodeId }
                           Nothing -> { activePoint | nodeId <- 0 }
 
                   -- Update the state
@@ -167,16 +165,19 @@ insert' state newChar = Debug.log ("inserting " ++ (Basics.toString newChar)
                                         EndOfString,
                         activePoint <- newActivePoint }
 
--- Move `activePoint` onto the edge that starts with `char`
-apSetEdge : UkkonenTree ->
+-- Move the active point n steps onto the edge that's labeled with char c. If
+-- that edge ends, continue onto x, the node it points to, and then onto the
+-- edge starting at x which is labeled with char c. Continue this process until
+-- all n steps have been taken.
+walkEdge : UkkonenTree ->
             Array Char ->
             ActivePoint ->
             Char ->
             Int ->
             ActivePoint
-apSetEdge tree string activePoint char n = case getEdge tree
-                                                        activePoint.nodeId
-                                                        char of
+walkEdge tree string activePoint char n = case getEdge tree
+                                                       activePoint.nodeId
+                                                       char of
     Just activeEdge ->
       let
         activeEdgeLength = case activeEdge.labelEnd of
@@ -186,7 +187,7 @@ apSetEdge tree string activePoint char n = case getEdge tree
         if n <= activeEdgeLength then
           { activePoint | edge <- Just (char, n) }
         else
-          apSetEdge tree
+          walkEdge tree
                     string
                     { activePoint | nodeId <- activeEdge.pointingTo }
                     (getChar string (activeEdge.labelStart + activeEdgeLength))
@@ -195,20 +196,6 @@ apSetEdge tree string activePoint char n = case getEdge tree
     Nothing -> Debug.crash ("Tried to reference edge "
       ++ (Basics.toString (activePoint.nodeId, char))
       ++ ", which doesn't exist")
-
-
--- Convenience method for looking up the character at the given position in the
--- input string
-getChar : Array Char -> Int -> Char
-getChar str i = case Array.get i str of
-  Just c -> c
-  Nothing -> Debug.crash <| "Tried to look up index " ++ (Basics.toString i) ++
-    ", which is outside the bounds of " ++ (Basics.toString str)
-
---
--- Utility methods
---
-
 
 
 -- Runs the given string through the Ukkonen algorithm and retuns the
@@ -220,3 +207,12 @@ buildTree' currentState string =
   case string of
     [] -> currentState.tree
     c::rest -> buildTree' (insert currentState c) rest
+
+
+-- Convenience method for looking up the character at the given position in the
+-- input string
+getChar : Array Char -> Int -> Char
+getChar str i = case Array.get i str of
+  Just c -> c
+  Nothing -> Debug.crash <| "Tried to look up index " ++ (Basics.toString i) ++
+    ", which is outside the bounds of " ++ (Basics.toString str)
