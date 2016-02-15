@@ -21,10 +21,8 @@ type alias UkkonenState =
     }
 
 
-
--- Returns the initial state for the Ukkonen algorithm
-
-
+{-| Returns the initial state for the Ukkonen algorithm
+-}
 initialState : UkkonenState
 initialState =
     { tree = emptyTree
@@ -38,10 +36,8 @@ initialState =
     }
 
 
-
--- Add another character to the tree
-
-
+{-| Add another character to the tree
+-}
 insert : UkkonenState -> Char -> UkkonenState
 insert initState newChar =
     let
@@ -90,7 +86,6 @@ insert' state newChar =
                                 | tree = newTree2
                             }
 
-            --activePoint <- walkEdge newTree2 string activePoint newChar 1 }
             -- The case that there is an active edge defined
             Just ( edgeChar, edgeSteps ) ->
                 case getEdge tree activePoint.nodeId edgeChar of
@@ -218,13 +213,11 @@ insert' state newChar =
                             }
 
 
-
--- Move the active point n steps onto the edge that's labeled with char c. If
--- that edge ends, continue onto x, the node it points to, and then onto the
--- edge starting at x which is labeled with char c. Continue this process until
--- all n steps have been taken.
-
-
+{-| Move the active point n steps onto the edge that's labeled with char c. If
+    that edge ends, continue onto x, the node it points to, and then onto the
+    edge starting at x which is labeled with char c. Continue this process
+    until all n steps have been taken.
+-}
 walkEdge : UkkonenTree -> Array Char -> ActivePoint -> Char -> Int -> ActivePoint
 walkEdge tree string activePoint char n =
     case
@@ -261,11 +254,9 @@ walkEdge tree string activePoint char n =
                 )
 
 
-
--- Runs the given string through the Ukkonen algorithm and retuns the
--- final state
-
-
+{-| Runs the given string through the Ukkonen algorithm and retuns the
+    final state
+-}
 buildTree : String -> UkkonenTree
 buildTree string =
     buildTree' initialState (String.toList string)
@@ -280,11 +271,9 @@ buildTree' currentState string =
             buildTree' (insert currentState c) rest
 
 
-
--- Convenience method for looking up the character at the given position in the
--- input string
-
-
+{-| Convenience method for looking up the character at the given position in
+    the input string
+-}
 getChar : Array Char -> Int -> Char
 getChar str i =
     case Array.get i str of
