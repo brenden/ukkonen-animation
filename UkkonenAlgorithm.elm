@@ -219,11 +219,11 @@ insert' newChar state =
     until all n steps have been taken.
 -}
 walkEdge : Array Char -> ActivePoint -> Char -> Int -> UkkonenTree -> ActivePoint
-walkEdge string activePoint char n tree =
+walkEdge string activePoint c n tree =
     case
         getEdge
             activePoint.nodeId
-            char
+            c
             tree
     of
         Just activeEdge ->
@@ -237,7 +237,7 @@ walkEdge string activePoint char n tree =
                             end - activeEdge.labelStart
             in
                 if n <= activeEdgeLength then
-                    { activePoint | edge = Just ( char, n ) }
+                    { activePoint | edge = Just ( c, n ) }
                 else
                     walkEdge
                         string
@@ -249,7 +249,7 @@ walkEdge string activePoint char n tree =
         Nothing ->
             Debug.crash
                 ("Tried to reference edge "
-                    ++ (Basics.toString ( activePoint.nodeId, char ))
+                    ++ (Basics.toString ( activePoint.nodeId, c ))
                     ++ ", which doesn't exist"
                 )
 

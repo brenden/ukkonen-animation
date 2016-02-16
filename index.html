@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Ukkonen's algorithm for linear-time suffix tree construction</title>
+    <script src="elm.js"></script>
+    <style>
+      #ukkonen-visualization {
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>foo</h1>
+    <div id="tree-graph"></div>
+    <div id="ukkonen-visualization"></div>
+  </body>
+
+  <script type="text/javascript">
+    // Show the stamp module in the "elm-stamps" div.
+    var div = document.getElementById('ukkonen-visualization');
+    var ukkonenVisualization = Elm.embed(Elm.UkkonenVisualization, div);
+    var treeGraph = document.getElementById('tree-graph');
+
+    ukkonenVisualization.ports.tree.subscribe(function(tree) {
+      treeGraph.innerHTML = tree;
+    });
+  </script>
+</html>
