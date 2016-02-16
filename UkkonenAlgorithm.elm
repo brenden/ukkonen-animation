@@ -38,16 +38,16 @@ initialState =
 
 {-| Add another character to the tree
 -}
-insert : UkkonenState -> Char -> UkkonenState
-insert initState newChar =
+insert : Char -> UkkonenState -> UkkonenState
+insert newChar initState =
     let
         state = { initState | string = push newChar initState.string }
     in
-        insert' state newChar
+        insert' newChar state
 
 
-insert' : UkkonenState -> Char -> UkkonenState
-insert' state newChar =
+insert' : Char -> UkkonenState -> UkkonenState
+insert' newChar state =
     let
         -- Get convenient references to the state record's fields
         { tree, remainder, activePoint, string, lastSplitNode } = state
@@ -59,12 +59,12 @@ insert' state newChar =
             -- The case that there's currently no active edge, i.e the active point
             -- is a node in the suffix tree
             Nothing ->
-                case getEdge tree activePoint.nodeId newChar of
+                case getEdge activePoint.nodeId newChar tree of
                     -- If an edge starting with the new character already exists at this
                     -- node, then set the active edge to that edge.
                     Just edge ->
                         { state
-                            | activePoint = walkEdge tree string activePoint newChar 1
+                            | activePoint = walkEdge string activePoint newChar 1 tree
                             , remainder = state.remainder + 1
                         }
 
@@ -75,12 +75,12 @@ insert' state newChar =
 
                             newTree2 =
                                 setEdge
-                                    newTree
                                     activePoint.nodeId
                                     newId
                                     newChar
                                     i
                                     EndOfString
+                                    newTree
                         in
                             { state
                                 | tree = newTree2
@@ -88,7 +88,7 @@ insert' state newChar =
 
             -- The case that there is an active edge defined
             Just ( edgeChar, edgeSteps ) ->
-                case getEdge tree activePoint.nodeId edgeChar of
+                case getEdge activePoint.nodeId edgeChar tree of
                     Just activeEdge ->
                         let
                             -- This is the index of the input string that the current edge
@@ -96,7 +96,7 @@ insert' state newChar =
                             currentStringIndex = activeEdge.labelStart + edgeSteps
 
                             -- The character that the current edge location represents
-                            c = getChar string currentStringIndex
+                            c = getChar currentStringIndex string
                         in
                             -- If the new suffix is already implicitly present in the
                             -- tree, then step forward on the active edge and increment
@@ -105,14 +105,15 @@ insert' state newChar =
                                 { state
                                     | activePoint =
                                         walkEdge
-                                            tree
                                             string
                                             activePoint
                                             edgeChar
                                             (edgeSteps + 1)
+                                            tree
                                     , remainder = state.remainder + 1
                                 }
                             else
+                                -- Split the active edge
                                 let
                                     ( newTree1, newNodeId1 ) = addNode tree
 
@@ -120,39 +121,39 @@ insert' state newChar =
 
                                     newTree3 =
                                         setEdge
-                                            newTree2
                                             activeEdge.pointingTo
                                             newNodeId1
                                             newChar
                                             i
                                             EndOfString
+                                            newTree2
 
                                     newTree4 =
                                         setEdge
-                                            newTree3
                                             activeEdge.pointingTo
                                             newNodeId2
                                             c
                                             currentStringIndex
                                             EndOfString
+                                            newTree3
 
                                     -- Common edge shared by the suffixes
                                     newTree5 =
                                         setEdge
-                                            newTree4
                                             activePoint.nodeId
                                             activeEdge.pointingTo
                                             edgeChar
                                             activeEdge.labelStart
                                             (Definite currentStringIndex)
+                                            newTree4
 
                                     newTree6 =
                                         case lastSplitNode of
                                             Just nodeId ->
                                                 setSuffixLink
-                                                    newTree5
                                                     nodeId
                                                     activeEdge.pointingTo
+                                                    newTree5
 
                                             Nothing ->
                                                 newTree5
@@ -163,16 +164,15 @@ insert' state newChar =
                                             { activePoint
                                                 | edge =
                                                     Just
-                                                        ( (getChar
-                                                            string
+                                                        ( getChar
                                                             (i - state.remainder + 2)
-                                                          )
+                                                            string
                                                         , edgeSteps - 1
                                                         )
                                             }
                                         else
                                             let
-                                                activeNode = getNode tree activePoint.nodeId
+                                                activeNode = getNode activePoint.nodeId tree
                                             in
                                                 case activeNode.suffixLink of
                                                     Just nodeId ->
@@ -191,7 +191,7 @@ insert' state newChar =
                                         }
                                 in
                                     -- Recurse to insert the next remaining suffix
-                                    insert' newState newChar
+                                    insert' newChar newState
 
                     -- Insert the new activeEdge if it doesn't exist yet
                     Nothing ->
@@ -203,12 +203,12 @@ insert' state newChar =
                             { state
                                 | tree =
                                     setEdge
-                                        treeWithNextSuffixNode
                                         activePoint.nodeId
                                         nextSuffixNode
                                         newChar
                                         i
                                         EndOfString
+                                        treeWithNextSuffixNode
                                 , activePoint = newActivePoint
                             }
 
@@ -218,13 +218,13 @@ insert' state newChar =
     edge starting at x which is labeled with char c. Continue this process
     until all n steps have been taken.
 -}
-walkEdge : UkkonenTree -> Array Char -> ActivePoint -> Char -> Int -> ActivePoint
-walkEdge tree string activePoint char n =
+walkEdge : Array Char -> ActivePoint -> Char -> Int -> UkkonenTree -> ActivePoint
+walkEdge string activePoint char n tree =
     case
         getEdge
-            tree
             activePoint.nodeId
             char
+            tree
     of
         Just activeEdge ->
             let
@@ -240,11 +240,11 @@ walkEdge tree string activePoint char n =
                     { activePoint | edge = Just ( char, n ) }
                 else
                     walkEdge
-                        tree
                         string
                         { activePoint | nodeId = activeEdge.pointingTo }
-                        (getChar string (activeEdge.labelStart + activeEdgeLength))
+                        (getChar (activeEdge.labelStart + activeEdgeLength) string)
                         (n - activeEdgeLength)
+                        tree
 
         Nothing ->
             Debug.crash
@@ -268,14 +268,14 @@ buildTree' currentState string =
             currentState.tree
 
         c :: rest ->
-            buildTree' (insert currentState c) rest
+            buildTree' (insert c currentState) rest
 
 
 {-| Convenience method for looking up the character at the given position in
     the input string
 -}
-getChar : Array Char -> Int -> Char
-getChar str i =
+getChar : Int -> Array Char -> Char
+getChar i str =
     case Array.get i str of
         Just c ->
             c

@@ -32,10 +32,8 @@ type ClosingIndex
     | EndOfString
 
 
-
--- Create an empty tree
-
-
+{-| Create an empty tree
+-}
 emptyTree : UkkonenTree
 emptyTree =
     let
@@ -44,12 +42,10 @@ emptyTree =
         IntDict.insert 0 newNode IntDict.empty
 
 
-
--- Get the edge that starts with `char`
-
-
-getEdge : UkkonenTree -> NodeId -> Char -> Maybe UkkonenEdge
-getEdge tree nodeId char =
+{-| Get the edge that starts with `char`
+-}
+getEdge : NodeId -> Char -> UkkonenTree -> Maybe UkkonenEdge
+getEdge nodeId char tree =
     case IntDict.get nodeId tree of
         Just node ->
             Dict.get char node.edges
@@ -58,14 +54,12 @@ getEdge tree nodeId char =
             Debug.crash "Active point is set to a node that doesn't exist"
 
 
-
--- Add `edge` that starts with `char`
-
-
-setEdge : UkkonenTree -> NodeId -> NodeId -> Char -> Int -> ClosingIndex -> UkkonenTree
-setEdge tree fromId toId char labelStart labelEnd =
+{-| Add `edge` that starts with `char`
+-}
+setEdge : NodeId -> NodeId -> Char -> Int -> ClosingIndex -> UkkonenTree -> UkkonenTree
+setEdge fromId toId char labelStart labelEnd tree =
     let
-        node = getNode tree fromId
+        node = getNode fromId tree
 
         newEdge =
             { pointingTo = toId
@@ -80,12 +74,10 @@ setEdge tree fromId toId char labelStart labelEnd =
         IntDict.insert fromId newNode tree
 
 
-
--- Get the node associated with given id
-
-
-getNode : UkkonenTree -> NodeId -> UkkonenNode
-getNode tree nodeId =
+{-| Get the node associated with given id
+-}
+getNode : NodeId -> UkkonenTree -> UkkonenNode
+getNode nodeId tree =
     case IntDict.get nodeId tree of
         Just node ->
             node
@@ -94,10 +86,8 @@ getNode tree nodeId =
             Debug.crash "Tried to reference a node that does't exist"
 
 
-
--- Add a new node to the graph
-
-
+{-| Add a new node to the graph
+-}
 addNode : UkkonenTree -> ( UkkonenTree, NodeId )
 addNode tree =
     let
@@ -110,22 +100,18 @@ addNode tree =
         ( newTree, count )
 
 
-
--- Set the suffix link of a node
-
-
-setSuffixLink : UkkonenTree -> NodeId -> NodeId -> UkkonenTree
-setSuffixLink tree fromId toId =
+{-| Set the suffix link of a node
+-}
+setSuffixLink : NodeId -> NodeId -> UkkonenTree -> UkkonenTree
+setSuffixLink fromId toId tree =
     let
-        node = getNode tree fromId
+        node = getNode fromId tree
     in
         IntDict.insert fromId { node | suffixLink = Just toId } tree
 
 
-
--- Prints out a representation of the tree
-
-
+{-| Prints out a representation of the tree
+-}
 toString : UkkonenTree -> String
 toString =
     toString' 0 0
@@ -133,7 +119,7 @@ toString =
 
 toString' level rootId tree =
     let
-        root = getNode tree rootId
+        root = getNode rootId tree
 
         spaces = (String.repeat level "  ")
     in
@@ -161,10 +147,8 @@ toString' level rootId tree =
                )
 
 
-
--- Convenince method for bulding strings that contain newlines
-
-
+{-| Convenince method for bulding strings that contain newlines
+-}
 newLine =
     """
 """
