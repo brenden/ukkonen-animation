@@ -3,6 +3,7 @@ module UkkonenTree (..) where
 import IntDict exposing (..)
 import Dict exposing (..)
 import String exposing (..)
+import Json.Encode as Json
 import Debug
 
 
@@ -145,6 +146,30 @@ toString' level rootId tree =
                         )
                     )
                )
+
+
+{-| Prints out a JSON representation of the tree
+-}
+toJson' : Int -> UkkonenTree -> Json.Value
+toJson' rootId tree = 
+    let
+        root = getNode rootId tree
+    in
+        Json.object [
+          ("id", Json.int rootId)
+          ("suffixLink", case root.suffixLink of
+            Just n -> Json.int n
+            Nothing -> Json.null),
+          ("children", List.map root.edges (\ edge ->
+            Json.object [
+              ("labelStart", edge.labelStart),
+              ("labelEnd", case edge.labelEnd of
+                Just l -> Json.int
+                Nothing -> Json.null),
+              ("pointingTo", toJson' edge.pointingTo tree)
+            ]
+          ))
+        ]
 
 
 {-| Convenince method for bulding strings that contain newlines
