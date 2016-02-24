@@ -150,26 +150,49 @@ toString' level rootId tree =
 
 {-| Prints out a JSON representation of the tree
 -}
+toJson : UkkonenTree -> Json.Value
+toJson tree =
+    toJson' 0 tree
+
+
 toJson' : Int -> UkkonenTree -> Json.Value
-toJson' rootId tree = 
+toJson' rootId tree =
     let
         root = getNode rootId tree
     in
-        Json.object [
-          ("id", Json.int rootId)
-          ("suffixLink", case root.suffixLink of
-            Just n -> Json.int n
-            Nothing -> Json.null),
-          ("children", List.map root.edges (\ edge ->
-            Json.object [
-              ("labelStart", edge.labelStart),
-              ("labelEnd", case edge.labelEnd of
-                Just l -> Json.int
-                Nothing -> Json.null),
-              ("pointingTo", toJson' edge.pointingTo tree)
+        Json.object
+            [ ( "id", Json.int rootId )
+            , ( "suffixLink"
+              , case root.suffixLink of
+                    Just n ->
+                        Json.int n
+
+                    Nothing ->
+                        Json.null
+              )
+            , ( "children"
+              , Json.object
+                    (List.map
+                        (\( c, edge ) ->
+                            ( fromChar c
+                            , Json.object
+                                [ ( "labelStart", Json.int edge.labelStart )
+                                , ( "labelEnd"
+                                  , case edge.labelEnd of
+                                        Definite l ->
+                                            Json.int l
+
+                                        EndOfString ->
+                                            Json.null
+                                  )
+                                , ( "pointingTo", toJson' edge.pointingTo tree )
+                                ]
+                            )
+                        )
+                        (Dict.toList root.edges)
+                    )
+              )
             ]
-          ))
-        ]
 
 
 {-| Convenince method for bulding strings that contain newlines
