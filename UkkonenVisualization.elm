@@ -10,9 +10,12 @@ import UkkonenAlgorithm exposing (..)
 
 
 port tree : Signal Json.Value
-port tree =
-    Signal.map (\( w, h ) -> Json.list [ Json.int w, Json.int h ]) Window.dimensions
+port tree = let
+    string = "abcabxabcd"
 
+    sufTree = UkkonenAlgorithm.buildTree string
+  in
+    Signal.map (\( w, h ) -> toJson sufTree) Window.dimensions
 
 main =
     let
@@ -20,4 +23,4 @@ main =
 
         tree = UkkonenAlgorithm.buildTree string
     in
-        pre [] [ text (UkkonenTree.toString tree) ]
+        pre [] [ text string ]
