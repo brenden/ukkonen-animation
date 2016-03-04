@@ -2,7 +2,8 @@ module UkkonenVisualization (..) where
 
 import Html exposing (pre, text)
 import Html.Attributes exposing (class)
-import Graphics.Element exposing (show)
+import Graphics.Element exposing (..)
+import Graphics.Input.Field exposing (..)
 import Json.Encode as Json
 import Window
 import UkkonenTree exposing (..)
@@ -17,10 +18,9 @@ port tree = let
   in
     Signal.map (\( w, h ) -> toJson sufTree) Window.dimensions
 
-main =
-    let
-        string = "abcabxabcd"
+inputString : Signal.Mailbox Content
+inputString = Signal.mailbox noContent
 
-        tree = UkkonenAlgorithm.buildTree string
-    in
-        pre [] [ text string ]
+main : Signal Element
+main =
+    Signal.map (field defaultStyle (Signal.message inputString.address) "Input string") inputString.signal
