@@ -11,15 +11,14 @@ import UkkonenAlgorithm exposing (..)
 
 
 port tree : Signal Json.Value
-port tree = let
-    string = "abcabxabcd"
+port tree =
+    Signal.map (\content -> UkkonenAlgorithm.buildTree content.string |> toJson) inputString.signal
 
-    sufTree = UkkonenAlgorithm.buildTree string
-  in
-    Signal.map (\( w, h ) -> toJson sufTree) Window.dimensions
 
 inputString : Signal.Mailbox Content
-inputString = Signal.mailbox noContent
+inputString =
+    Signal.mailbox noContent
+
 
 main : Signal Element
 main =
