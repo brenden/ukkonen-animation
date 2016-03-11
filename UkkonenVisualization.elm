@@ -1,5 +1,6 @@
 module UkkonenVisualization (..) where
 
+import Array exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (id, class)
 import Text
@@ -18,10 +19,18 @@ lightGrayColor = rgb 120 120 120
 
 port tree : Signal Json.Value
 port tree =
-    Signal.map (\content -> UkkonenAlgorithm.buildTree content.string |> toJson) inputString.signal
+    Signal.map (\ inputContent -> UkkonenAlgorithm.buildTree inputContent.string |> toJson)
+               (Signal.sampleOn inputButton.signal inputString.signal)
 
 
-type Button = Build | Back | Forward
+type alias Model =
+    { input: String
+    , steps : Array UkkonenTree
+    , currentStep : Int
+    }
+
+
+type Action = Build String | Back | Forward
 
 
 inputString : Signal.Mailbox Content
@@ -29,9 +38,9 @@ inputString =
     Signal.mailbox noContent
 
 
-inputButton : Signal.Mailbox Button
+inputButton : Signal.Mailbox Bool
 inputButton =
-    Signal.mailbox Build
+    Signal.mailbox False
 
 
 inputFieldStyle : Style
@@ -52,7 +61,12 @@ inputField =
 
 
 visualizeButton : Element
-visualizeButton = Graphics.Input.button (Signal.message inputButton.address Build) "build suffix tree"
+visualizeButton = Graphics.Input.button (Signal.message inputButton.address True) "build suffix tree"
+
+
+actions : Signal Action
+actions = Signal.map2 (\ _ inputContent -> Build inputContent.string)
+          inputButton.signal (Signal.sampleOn inputButton.signal inputString.signal)
 
 
 main : Signal Html
