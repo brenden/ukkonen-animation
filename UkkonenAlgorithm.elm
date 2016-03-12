@@ -1,7 +1,8 @@
-module UkkonenAlgorithm (buildTree) where
+module UkkonenAlgorithm (buildTree, steps, UkkonenState) where
 
 import UkkonenTree exposing (..)
 import Array exposing (..)
+import List exposing (..)
 import String exposing (..)
 import Debug
 
@@ -269,6 +270,22 @@ buildTree' currentState string =
 
         c :: rest ->
             buildTree' (insert c currentState) rest
+
+
+steps : String -> List UkkonenState
+steps string =
+    List.reverse
+        <| List.foldl
+            (\c stepList ->
+                case head stepList of
+                    Just lastStep ->
+                        (insert c lastStep) :: stepList
+
+                    Nothing ->
+                        [ insert c initialState ]
+            )
+            []
+            (String.toList string)
 
 
 {-| Convenience method for looking up the character at the given position in
