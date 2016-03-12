@@ -80,40 +80,38 @@
     var ukkonenVisualization = Elm.embed(Elm.UkkonenVisualization, div);
     var treeGraph = document.getElementById('tree-graph');
 
+    function formatD3Tree(tree, parent) {
+      return {
+        name: tree.id,
+        parent: parent,
+        children: Object.keys(tree.children).map(function(k) {
+          return formatD3Tree(tree.children[k].pointingTo, tree.id);
+        })
+      };
+    }
+
+
+    var margin = {top: 20, right: 120, bottom: 20, left: 120};
+    var width = 960 - margin.right - margin.left;
+    var height = 500 - margin.top - margin.bottom;
+
+    var i = 0;
+    var duration = 750;
+
+    var tree = d3.layout.tree().size([height, width]);
+
+    var diagonal = d3.svg.diagonal().projection(function(d) {
+      return [d.y, d.x];
+    });
+
+    var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.right + margin.left)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
     ukkonenVisualization.ports.tree.subscribe(function(x) {
-      function formatD3Tree(tree, parent) {
-        return {
-          name: tree.id,
-          parent: parent,
-          children: Object.keys(tree.children).map(function(k) {
-            return formatD3Tree(tree.children[k].pointingTo, tree.id);
-          })
-        };
-      }
-
       var treeData = [formatD3Tree(x, null)];
-
-      console.log(">>> " + x);
-      console.log(">>> " + treeData);
-
-      var margin = {top: 20, right: 120, bottom: 20, left: 120};
-      var width = 960 - margin.right - margin.left;
-      var height = 500 - margin.top - margin.bottom;
-
-      var i = 0;
-      var duration = 750;
-
-      var tree = d3.layout.tree().size([height, width]);
-
-      var diagonal = d3.svg.diagonal().projection(function(d) {
-        return [d.y, d.x];
-      });
-
-      var svg = d3.select("body").append("svg")
-        .attr("width", width + margin.right + margin.left)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
       var root = treeData[0];
       root.x0 = height / 2;
