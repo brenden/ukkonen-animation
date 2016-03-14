@@ -272,6 +272,9 @@ buildTree' currentState string =
             buildTree' (insert c currentState) rest
 
 
+{-| Creates a list of all intermediary states encountered while building the
+    suffix tree
+-}
 steps : String -> List UkkonenState
 steps string =
     List.reverse

@@ -37,7 +37,8 @@ type alias Model =
 
 
 type Action
-    = Build String
+    = NoOp
+    | Build String
     | Back
     | Forward
 
@@ -47,9 +48,9 @@ inputString =
     Signal.mailbox noContent
 
 
-inputButton : Signal.Mailbox Bool
+inputButton : Signal.Mailbox Action
 inputButton =
-    Signal.mailbox False
+    Signal.mailbox NoOp
 
 
 inputFieldStyle : Style
@@ -71,15 +72,30 @@ inputField =
 
 visualizeButton : Element
 visualizeButton =
-    Graphics.Input.button (Signal.message inputButton.address True) "build suffix tree"
+    Graphics.Input.button (Signal.message inputButton.address NoOp) "build suffix tree"
 
 
-actions : Signal Action
-actions =
+inputUpdates : Signal Action
+inputUpdates =
     Signal.map2
         (\_ inputContent -> Build inputContent.string)
         inputButton.signal
         (Signal.sampleOn inputButton.signal inputString.signal)
+
+
+leftButton : Element
+leftButton =
+    Graphics.Input.button (Signal.message currentStepUpdates.address Back) "◀"
+
+
+rightButton : Element
+rightButton =
+    Graphics.Input.button (Signal.message currentStepUpdates.address Forward) "▶"
+
+
+currentStepUpdates : Signal.Mailbox Action
+currentStepUpdates =
+    Signal.mailbox NoOp
 
 
 main : Signal Html
@@ -99,6 +115,9 @@ update action model =
         Forward ->
             { model | currentStep = model.currentStep + 1 }
 
+        NoOp ->
+            model
+
 
 view : Content -> Html
 view content =
@@ -109,5 +128,18 @@ view content =
             [ id "input-string" ]
             [ inputField content |> width 400 |> fromElement
             , span [ id "input-button-wrapper" ] [ visualizeButton |> width 150 |> fromElement ]
+            ]
+        , div
+            [ id "side-box" ]
+            [ div
+                [ id "narrative" ]
+                [ h2 [] [ text "Step 1" ]
+                , p [] [ text "Some explanation blah blah blah" ]
+                ]
+            , div
+                [ id "navigation" ]
+                [ span [ id "left-button-wrapper" ] [ leftButton |> width 50 |> fromElement ]
+                , span [ id "right-button-wrapper" ] [ rightButton |> width 50 |> fromElement ]
+                ]
             ]
         ]
