@@ -4,8 +4,8 @@
     <title>Visualization of Ukkonen's Algorithm</title>
     <script src="elm.js"></script>
     <style>
-      #ukkonen-visualization svg {
-        float: right;
+      #steps-wrapper svg {
+        float: left;
       }
 
       #input-string {
@@ -14,6 +14,7 @@
       }
 
       #side-box {
+        float: left;
         width: 350px;
         background-color: #DDDDDD;
         -webkit-border-radius: 4;
@@ -116,7 +117,7 @@
       return [d.y, d.x];
     });
 
-    var svg = d3.select("#ukkonen-visualization").append("svg")
+    var svg = d3.select("#steps-wrapper").append("svg")
       .attr("width", width + margin.right + margin.left)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")

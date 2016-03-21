@@ -30,17 +30,27 @@ port tree =
 
 
 type alias Model =
-    { input : String
+    { string : String
     , steps : Array UkkonenState
     , currentStep : Int
+    , inputField: Content
     }
 
 
 type Action
     = NoOp
+    | InputFieldUpdate Content
     | Build String
     | Back
     | Forward
+
+
+initialModel = {
+    string = "",
+    steps = Array.empty,
+    currentStep = 0,
+    inputField = noContent
+  }
 
 
 inputString : Signal.Mailbox Content
@@ -70,13 +80,17 @@ inputField =
     field inputFieldStyle (Signal.message inputString.address) "input string..."
 
 
+inputFieldUpdates : Signal Action
+inputFieldUpdates = Signal.map (\ content -> InputFieldUpdate content) inputString.signal
+
+
 visualizeButton : Element
 visualizeButton =
     Graphics.Input.button (Signal.message inputButton.address NoOp) "build suffix tree"
 
 
-inputUpdates : Signal Action
-inputUpdates =
+stringUpdates : Signal Action
+stringUpdates =
     Signal.map2
         (\_ inputContent -> Build inputContent.string)
         inputButton.signal
@@ -100,14 +114,27 @@ currentStepUpdates =
 
 main : Signal Html
 main =
-    Signal.map view inputString.signal
+    Signal.map view model
+
+
+actions : Signal Action
+actions =
+    Signal.mergeMany [stringUpdates, currentStepUpdates.signal, inputFieldUpdates]
+
+
+model : Signal Model
+model =
+    Signal.foldp update initialModel actions
 
 
 update : Action -> Model -> Model
 update action model =
     case action of
-        Build input ->
-            { model | input = input, steps = fromList <| UkkonenAlgorithm.steps input }
+        InputFieldUpdate content ->
+            { model | inputField = content }
+
+        Build string ->
+            { model | string = string, steps = fromList <| UkkonenAlgorithm.steps string }
 
         Back ->
             { model | currentStep = model.currentStep - 1 }
@@ -119,27 +146,31 @@ update action model =
             model
 
 
-view : Content -> Html
-view content =
+view : Model -> Html
+view model =
     section
         [ id "visualization" ]
         [ h1 [] [ text "Visualization of Ukkonen's Algorithm" ]
         , div
             [ id "input-string" ]
-            [ inputField content |> width 400 |> fromElement
+            [ inputField model.inputField |> width 400 |> fromElement
             , span [ id "input-button-wrapper" ] [ visualizeButton |> width 150 |> fromElement ]
             ]
         , div
-            [ id "side-box" ]
-            [ div
-                [ id "narrative" ]
-                [ h2 [] [ text "Step 1" ]
-                , p [] [ text "Some explanation blah blah blah" ]
-                ]
-            , div
-                [ id "navigation" ]
-                [ span [ id "left-button-wrapper" ] [ leftButton |> width 50 |> fromElement ]
-                , span [ id "right-button-wrapper" ] [ rightButton |> width 50 |> fromElement ]
+            [ id "steps-wrapper" ]
+            [
+              div
+                [ id "side-box" ]
+                [ div
+                    [ id "narrative" ]
+                    [ h2 [] [ text <| "Step " ++ Basics.toString model.currentStep ]
+                    , p [] [ text "Some explanation blah blah blah" ]
+                    ]
+                , div
+                    [ id "navigation" ]
+                    [ span [ id "left-button-wrapper" ] [ leftButton |> width 50 |> fromElement ]
+                    , span [ id "right-button-wrapper" ] [ rightButton |> width 50 |> fromElement ]
+                    ]
                 ]
             ]
         ]
