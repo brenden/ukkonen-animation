@@ -95,9 +95,12 @@
 
     function formatD3Tree(tree, parent) {
       return {
-        name: tree.id,
+        id: tree.id,
         parent: parent,
         children: Object.keys(tree.children).map(function(k) {
+          return formatD3Tree(tree.children[k].pointingTo, tree.id);
+        }),
+        edgeLabels:  Object.keys(tree.children).map(function(k) {
           return formatD3Tree(tree.children[k].pointingTo, tree.id);
         })
       };
@@ -145,7 +148,7 @@
 
         // Update the nodes…
         var node = svg.selectAll("g.node")
-          .data(nodes, function(d) { return d.id || (d.id = ++i); });
+          .data(nodes, function(d) { return d.id; });
 
         // Enter any new nodes at the parent's previous position.
         var nodeEnter = node.enter().append("g")
@@ -162,7 +165,7 @@
           .attr("x", function(d) { return d.children || d._children ? -13 : 13; })
           .attr("dy", ".35em")
           .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
-          .text(function(d) { return d.name; })
+          .text(function(d) { return d.id; })
           .style("fill-opacity", 1e-6);
 
         // Transition nodes to their new position.
@@ -214,6 +217,12 @@
           return diagonal({source: o, target: o});
           })
           .remove();
+
+        // Update the link labels
+        link.enter().append("text")
+           .attr("x", function(d) { return d.source.y + (d.target.y - d.source.y)/2; })
+           .attr("y", function(d) { return d.source.x + (d.target.x - d.source.x)/2; })
+           .text(function(d) { return "test"; });
 
         // Stash the old positions for transition.
         nodes.forEach(function(d) {
