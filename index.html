@@ -116,6 +116,7 @@
     // Subscribe to changes to the tree from elm, and update D3 when the tree
     // data changes
     ukkonenVisualization.ports.tree.subscribe(function(x) {
+      console.log(x)
       root = formatD3Tree(x, null);
       root.x = height / 2;
       root.y = 0;
@@ -141,7 +142,6 @@
         }),
         edgeLabels:  Object.keys(tree.children).map(function(k) {
           return formatD3Tree(tree.children[k].pointingTo, tree);
-        M
         })
       };
     }

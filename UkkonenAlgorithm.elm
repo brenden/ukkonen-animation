@@ -64,10 +64,11 @@ insert' newChar state =
                     -- If an edge starting with the new character already exists at this
                     -- node, then set the active edge to that edge.
                     Just edge ->
-                        [{ state
+                        [ { state
                             | activePoint = walkEdge string activePoint newChar 1 tree
                             , remainder = state.remainder + 1
-                        }]
+                          }
+                        ]
 
                     -- Otherwise we need to create a new edge pointing from this node
                     Nothing ->
@@ -83,9 +84,10 @@ insert' newChar state =
                                     EndOfString
                                     newTree
                         in
-                            [{ state
+                            [ { state
                                 | tree = newTree2
-                            }]
+                              }
+                            ]
 
             -- The case that there is an active edge defined
             Just ( edgeChar, edgeSteps ) ->
@@ -112,7 +114,8 @@ insert' newChar state =
                                             (edgeSteps + 1)
                                             tree
                                     , remainder = state.remainder + 1
-                                } ]
+                                  }
+                                ]
                             else
                                 -- Split the active edge
                                 let
@@ -201,7 +204,7 @@ insert' newChar state =
 
                             newActivePoint = { activePoint | edge = Nothing }
                         in
-                            [{ state
+                            [ { state
                                 | tree =
                                     setEdge
                                         activePoint.nodeId
@@ -211,7 +214,8 @@ insert' newChar state =
                                         EndOfString
                                         treeWithNextSuffixNode
                                 , activePoint = newActivePoint
-                            }]
+                              }
+                            ]
 
 
 {-| Move the active point n steps onto the edge that's labeled with char c. If
@@ -265,7 +269,7 @@ steps string =
             (\c stepList ->
                 case head stepList of
                     Just lastStep ->
-                        List.append stepList (insert c lastStep)
+                        List.append (List.reverse (insert c lastStep)) stepList
 
                     Nothing ->
                         insert c initialState

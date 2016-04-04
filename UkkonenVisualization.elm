@@ -25,15 +25,22 @@ lightGrayColor =
 port tree : Signal Json.Value
 port tree =
     Signal.map
-        (\inputContent -> UkkonenAlgorithm.buildTree inputContent.string |> toJson)
-        (Signal.sampleOn inputButton.signal inputString.signal)
+        (\( currentStep, steps ) ->
+            case Array.get currentStep steps of
+                Just state ->
+                    toJson state.tree
+
+                Nothing ->
+                    toJson emptyTree
+        )
+        (signal.noRepeats (Signal.map (\m -> ( m.currentStep, m.steps )) model))
 
 
 type alias Model =
     { string : String
     , steps : Array UkkonenState
     , currentStep : Int
-    , inputField: Content
+    , inputField : Content
     }
 
 
@@ -45,12 +52,12 @@ type Action
     | Forward
 
 
-initialModel = {
-    string = "",
-    steps = Array.empty,
-    currentStep = 0,
-    inputField = noContent
-  }
+initialModel =
+    { string = ""
+    , steps = Array.empty
+    , currentStep = 0
+    , inputField = noContent
+    }
 
 
 inputString : Signal.Mailbox Content
@@ -81,7 +88,8 @@ inputField =
 
 
 inputFieldUpdates : Signal Action
-inputFieldUpdates = Signal.map (\ content -> InputFieldUpdate content) inputString.signal
+inputFieldUpdates =
+    Signal.map (\content -> InputFieldUpdate content) inputString.signal
 
 
 visualizeButton : Element
@@ -119,7 +127,7 @@ main =
 
 actions : Signal Action
 actions =
-    Signal.mergeMany [stringUpdates, currentStepUpdates.signal, inputFieldUpdates]
+    Signal.mergeMany [ stringUpdates, currentStepUpdates.signal, inputFieldUpdates ]
 
 
 model : Signal Model
@@ -158,8 +166,7 @@ view model =
             ]
         , div
             [ id "steps-wrapper" ]
-            [
-              div
+            [ div
                 [ id "side-box" ]
                 [ div
                     [ id "narrative" ]
