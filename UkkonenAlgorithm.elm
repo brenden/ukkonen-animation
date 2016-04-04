@@ -1,4 +1,4 @@
-module UkkonenAlgorithm (buildTree, steps, UkkonenState) where
+module UkkonenAlgorithm (steps, UkkonenState) where
 
 import UkkonenTree exposing (..)
 import Array exposing (..)
@@ -39,7 +39,7 @@ initialState =
 
 {-| Add another character to the tree
 -}
-insert : Char -> UkkonenState -> UkkonenState
+insert : Char -> UkkonenState -> List UkkonenState
 insert newChar initState =
     let
         state = { initState | string = push newChar initState.string }
@@ -47,7 +47,7 @@ insert newChar initState =
         insert' newChar state
 
 
-insert' : Char -> UkkonenState -> UkkonenState
+insert' : Char -> UkkonenState -> List UkkonenState
 insert' newChar state =
     let
         -- Get convenient references to the state record's fields
@@ -64,10 +64,10 @@ insert' newChar state =
                     -- If an edge starting with the new character already exists at this
                     -- node, then set the active edge to that edge.
                     Just edge ->
-                        { state
+                        [{ state
                             | activePoint = walkEdge string activePoint newChar 1 tree
                             , remainder = state.remainder + 1
-                        }
+                        }]
 
                     -- Otherwise we need to create a new edge pointing from this node
                     Nothing ->
@@ -83,9 +83,9 @@ insert' newChar state =
                                     EndOfString
                                     newTree
                         in
-                            { state
+                            [{ state
                                 | tree = newTree2
-                            }
+                            }]
 
             -- The case that there is an active edge defined
             Just ( edgeChar, edgeSteps ) ->
@@ -103,7 +103,7 @@ insert' newChar state =
                             -- tree, then step forward on the active edge and increment
                             -- the remainder.
                             if newChar == c then
-                                { state
+                                [ { state
                                     | activePoint =
                                         walkEdge
                                             string
@@ -112,7 +112,7 @@ insert' newChar state =
                                             (edgeSteps + 1)
                                             tree
                                     , remainder = state.remainder + 1
-                                }
+                                } ]
                             else
                                 -- Split the active edge
                                 let
@@ -192,7 +192,7 @@ insert' newChar state =
                                         }
                                 in
                                     -- Recurse to insert the next remaining suffix
-                                    insert' newChar newState
+                                    newState :: (insert' newChar newState)
 
                     -- Insert the new activeEdge if it doesn't exist yet
                     Nothing ->
@@ -201,7 +201,7 @@ insert' newChar state =
 
                             newActivePoint = { activePoint | edge = Nothing }
                         in
-                            { state
+                            [{ state
                                 | tree =
                                     setEdge
                                         activePoint.nodeId
@@ -211,7 +211,7 @@ insert' newChar state =
                                         EndOfString
                                         treeWithNextSuffixNode
                                 , activePoint = newActivePoint
-                            }
+                            }]
 
 
 {-| Move the active point n steps onto the edge that's labeled with char c. If
@@ -255,23 +255,6 @@ walkEdge string activePoint c n tree =
                 )
 
 
-{-| Runs the given string through the Ukkonen algorithm and retuns the
-    final state
--}
-buildTree : String -> UkkonenTree
-buildTree string =
-    buildTree' initialState (String.toList string)
-
-
-buildTree' currentState string =
-    case string of
-        [] ->
-            currentState.tree
-
-        c :: rest ->
-            buildTree' (insert c currentState) rest
-
-
 {-| Creates a list of all intermediary states encountered while building the
     suffix tree
 -}
@@ -282,10 +265,10 @@ steps string =
             (\c stepList ->
                 case head stepList of
                     Just lastStep ->
-                        (insert c lastStep) :: stepList
+                        List.append stepList (insert c lastStep)
 
                     Nothing ->
-                        [ insert c initialState ]
+                        insert c initialState
             )
             []
             (String.toList string)
