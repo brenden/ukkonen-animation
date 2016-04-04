@@ -117,9 +117,9 @@
     // data changes
     ukkonenVisualization.ports.tree.subscribe(function(x) {
       root = formatD3Tree(x, null);
-      root.x0 = height / 2;
-      root.y0 = 0;
-      updateD3Tree(root);
+      root.x = height / 2;
+      root.y = 0;
+      updateD3Tree();
       d3.select(self.frameElement).style("height", "500px");
     });
 
@@ -129,18 +129,19 @@
      * expected by D3
      *
      * @param (Object) tree
-     * @param (String) parentId
+     * @param (Object) parent
      * @return (Object)
      */
-    function formatD3Tree(tree, parentId) {
+    function formatD3Tree(tree, parent) {
       return {
         id: tree.id,
-        parent: parentId,
+        parent: parent,
         children: Object.keys(tree.children).map(function(k) {
-          return formatD3Tree(tree.children[k].pointingTo, tree.id);
+          return formatD3Tree(tree.children[k].pointingTo, tree);
         }),
         edgeLabels:  Object.keys(tree.children).map(function(k) {
-          return formatD3Tree(tree.children[k].pointingTo, tree.id);
+          return formatD3Tree(tree.children[k].pointingTo, tree);
+        M
         })
       };
     }
@@ -148,10 +149,8 @@
 
     /*
      * Transitions the D3 tree diagram from its previous state to the new one
-     *
-     * @param (Object) root
      */
-    function updateD3Tree(source) {
+    function updateD3Tree() {
 
       // Compute the new tree layout.
       var nodes = tree.nodes(root).reverse(),
@@ -168,23 +167,17 @@
       var nodeEnter = node.enter().append("g")
         .attr("class", "node")
         .attr("transform", function(d) {
-            return "translate(" + source.y0 + "," + source.x0 + ")";
+          return "translate("
+            + (d.parent || root).y + "," + (d.parent || root).x + ")";
         });
 
       nodeEnter.append("circle")
         .attr("r", 1e-6)
-        .style("fill", function(d) {
-           return d._children ? "lightsteelblue" : "#fff";
-        });
+        .style("fill", "lightsteelblue");
 
       nodeEnter.append("text")
-        .attr("x", function(d) {
-          return d.children || d._children ? -13 : 13;
-        })
+        .attr("x", 13)
         .attr("dy", ".35em")
-        .attr("text-anchor", function(d) {
-          return d.children || d._children ? "end" : "start";
-        })
         .text(function(d) { return d.id; })
         .style("fill-opacity", 1e-6);
 
@@ -208,7 +201,8 @@
       var nodeExit = node.exit().transition()
         .duration(duration)
         .attr("transform", function(d) {
-          return "translate(" + source.y + "," + source.x + ")";
+          return "translate("
+            + (d.parent || root).y + "," + (d.parent || root).x + ")";
         })
         .remove();
 
@@ -218,7 +212,6 @@
       nodeExit.select("text")
         .style("fill-opacity", 1e-6);
 
-      // Update the links…
       var link = svg.selectAll("g.ll")
         .data(links, function(d) { return d.target.id; });
 
@@ -226,43 +219,56 @@
       var linkEnter = link.enter().append("g")
         .attr("class", "ll")
 
-      // Update the link labels
+      // Update the links
       linkEnter.append("path")
         .attr("class", "link")
         .attr("d", function(d) {
-          var o = {x: source.x0, y: source.y0};
+          var o = {x: d.source.x, y: d.source.y};
           return diagonal({source: o, target: o});
         });
 
+      // Update the link labels
       linkEnter.append("text")
-        .attr("x", function(d) {
-          return d.source.y + (d.target.y - d.source.y)/2;
-        })
-        .attr("y", function(d) {
-          return d.source.x + (d.target.x - d.source.x)/2;
-        })
         .text(function(d) { return "test"; });
 
       // Transition links to their new position.
       link.transition()
         .select(".link")
         .duration(duration)
-        .attr("d", diagonal);
+        .attr("d", diagonal)
 
-      // Transition exiting nodes to the parent's new position.
+      // Fade in link labels and transition them to their new positions
+      link.transition()
+        .select("text")
+        .duration(duration)
+        .style("fill-opacity", 1)
+        .attr("x", function(d) {
+          return d.source.y + (d.target.y - d.source.y)/2;
+        })
+        .attr("y", function(d) {
+          return d.source.x + (d.target.x - d.source.x)/2;
+        });
+
+      // Transition exiting links to parent's new position
       link.exit().transition()
         .select(".link")
         .duration(duration)
         .attr("d", function(d) {
-          var o = {x: source.x, y: source.y};
+          var o = {x: d.source.x, y: d.source.y};
           return diagonal({source: o, target: o});
         });
 
-      // Stash the old positions for transition.
-      nodes.forEach(function(d) {
-        d.x0 = d.x;
-        d.y0 = d.y;
-      });
+      // Fade out exiting link labels
+      link.exit().transition()
+        .select("text")
+        .duration(duration)
+        .style("fill-opacity", 1e-6)
+        .attr("x", function(d) {
+          return d.source.y;
+        })
+        .attr("y", function(d) {
+          return d.source.x;
+        });
     }
   </script>
 </html>
