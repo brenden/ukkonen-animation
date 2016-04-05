@@ -33,7 +33,7 @@ port tree =
                 Nothing ->
                     toJson emptyTree
         )
-        (signal.noRepeats (Signal.map (\m -> ( m.currentStep, m.steps )) model))
+        (Signal.dropRepeats (Signal.map (\m -> ( m.currentStep, m.steps )) model))
 
 
 type alias Model =
@@ -145,10 +145,10 @@ update action model =
             { model | string = string, steps = fromList <| UkkonenAlgorithm.steps string }
 
         Back ->
-            { model | currentStep = model.currentStep - 1 }
+            { model | currentStep = max (model.currentStep - 1) 0 }
 
         Forward ->
-            { model | currentStep = model.currentStep + 1 }
+            { model | currentStep = min (model.currentStep + 1) ((Array.length model.steps) - 1) }
 
         NoOp ->
             model
