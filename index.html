@@ -95,23 +95,25 @@
     var treeGraph = document.getElementById('tree-graph');
 
     // Set up d3 tree visualization
-    var margin = {top: 20, right: 120, bottom: 20, left: 120};
+    var margin = {top: 15, right: 15, bottom: 15, left: 15};
     var width = 960 - margin.right - margin.left;
-    var height = 500 - margin.top - margin.bottom;
+    var height = 700 - margin.top - margin.bottom;
     var duration = 750;
     var tree = d3.layout.tree().size([height, width]);
     var root;
     var i = 0;
-
-    var diagonal = d3.svg.diagonal().projection(function(d) {
-      return [d.y, d.x];
-    });
 
     var svg = d3.select("#steps-wrapper").append("svg")
       .attr("width", width + margin.right + margin.left)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var linkGroup = svg.append("g")
+      .attr("class", "link-group");
+
+    var nodeGroup = svg.append("g")
+      .attr("class", "node-group");
 
     // Subscribe to changes to the tree from elm, and update D3 when the tree
     // data changes
@@ -159,8 +161,8 @@
       // Normalize for fixed-depth.
       nodes.forEach(function(d) { d.y = d.depth * 180; });
 
-      // Update the nodes…
-      var node = svg.selectAll("g.node")
+      // Update the nodes
+      var node = nodeGroup.selectAll("g.node")
         .data(nodes, function(d) { return d.id; });
 
       // Enter any new nodes at the parent's previous position.
@@ -175,12 +177,6 @@
         .attr("r", 1e-6)
         .style("fill", "lightsteelblue");
 
-      nodeEnter.append("text")
-        .attr("x", 13)
-        .attr("dy", ".35em")
-        .text(function(d) { return d.id; })
-        .style("fill-opacity", 1e-6);
-
       // Transition nodes to their new position.
       var nodeUpdate = node.transition()
         .duration(duration)
@@ -189,10 +185,7 @@
         });
 
       nodeUpdate.select("circle")
-        .attr("r", 10)
-        .style("fill", function(d) {
-          return d._children ? "lightsteelblue" : "#fff";
-        });
+        .attr("r", 10);
 
       nodeUpdate.select("text")
         .style("fill-opacity", 1);
@@ -212,20 +205,20 @@
       nodeExit.select("text")
         .style("fill-opacity", 1e-6);
 
-      var link = svg.selectAll("g.ll")
+      // Update the links
+      var link = linkGroup.selectAll("g.ll")
         .data(links, function(d) { return d.target.id; });
 
       // Enter any new links at the parent's previous position.
       var linkEnter = link.enter().append("g")
         .attr("class", "ll")
 
-      // Update the links
-      linkEnter.append("path")
+      linkEnter.append("line")
         .attr("class", "link")
-        .attr("d", function(d) {
-          var o = {x: d.source.x, y: d.source.y};
-          return diagonal({source: o, target: o});
-        });
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.source.y; })
+        .attr("y2", function(d) { return d.source.x; });
 
       // Update the link labels
       linkEnter.append("text")
@@ -235,28 +228,39 @@
       link.transition()
         .select(".link")
         .duration(duration)
-        .attr("d", diagonal)
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.target.y; })
+        .attr("y2", function(d) { return d.target.x; });
 
       // Fade in link labels and transition them to their new positions
       link.transition()
         .select("text")
         .duration(duration)
         .style("fill-opacity", 1)
+        .style("text-anchor", "middle")
+        .attr("transform", function(d) {
+          var rot = 180 * (Math.atan((d.target.x - d.source.x) /
+                                     (d.target.y - d.source.y)) / Math.PI);
+          var x = d.source.y + (d.target.y - d.source.y)/2;
+          var y = d.source.x + (d.target.x - d.source.x)/2 - 5;
+          return "rotate(" + rot + "," + x + "," + y + ")";
+        })
         .attr("x", function(d) {
           return d.source.y + (d.target.y - d.source.y)/2;
         })
         .attr("y", function(d) {
-          return d.source.x + (d.target.x - d.source.x)/2;
+          return d.source.x + (d.target.x - d.source.x)/2 - 5;
         });
 
       // Transition exiting links to parent's new position
       link.exit().transition()
         .select(".link")
         .duration(duration)
-        .attr("d", function(d) {
-          var o = {x: d.source.x, y: d.source.y};
-          return diagonal({source: o, target: o});
-        });
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.source.y; })
+        .attr("y2", function(d) { return d.source.x; });
 
       // Fade out exiting link labels
       link.exit().transition()
