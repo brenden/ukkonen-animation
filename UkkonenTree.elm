@@ -150,13 +150,13 @@ toString' level rootId tree =
 
 {-| Prints out a JSON representation of the tree
 -}
-toJson : UkkonenTree -> Json.Value
-toJson tree =
-    toJson' 0 tree
+toJson : UkkonenTree -> String -> Json.Value
+toJson tree string =
+    toJson' 0 tree string
 
 
-toJson' : Int -> UkkonenTree -> Json.Value
-toJson' rootId tree =
+toJson' : Int -> UkkonenTree -> String -> Json.Value
+toJson' rootId tree string =
     let
         root = getNode rootId tree
     in
@@ -174,20 +174,21 @@ toJson' rootId tree =
               , Json.object
                     (List.map
                         (\( c, edge ) ->
-                            ( fromChar c
-                            , Json.object
-                                [ ( "labelStart", Json.int edge.labelStart )
-                                , ( "labelEnd"
-                                  , case edge.labelEnd of
+                            let
+                                labelEnd =
+                                    case edge.labelEnd of
                                         Definite l ->
-                                            Json.int l
+                                            l
 
                                         EndOfString ->
-                                            Json.null
-                                  )
-                                , ( "pointingTo", toJson' edge.pointingTo tree )
-                                ]
-                            )
+                                            String.length string
+                            in
+                                ( fromChar c
+                                , Json.object
+                                    [ ( "label", Json.string <| slice edge.labelStart labelEnd string )
+                                    , ( "pointingTo", toJson' edge.pointingTo tree string )
+                                    ]
+                                )
                         )
                         (Dict.toList root.edges)
                     )

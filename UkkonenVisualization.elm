@@ -25,15 +25,15 @@ lightGrayColor =
 port tree : Signal Json.Value
 port tree =
     Signal.map
-        (\( currentStep, steps ) ->
+        (\( currentStep, steps, string ) ->
             case Array.get currentStep steps of
                 Just state ->
-                    toJson state.tree
+                    toJson state.tree string
 
                 Nothing ->
-                    toJson emptyTree
+                    toJson emptyTree string
         )
-        (Signal.dropRepeats (Signal.map (\m -> ( m.currentStep, m.steps )) model))
+        (Signal.dropRepeats (Signal.map (\m -> ( m.currentStep, m.steps, m.string )) model))
 
 
 type alias Model =

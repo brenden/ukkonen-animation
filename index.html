@@ -142,8 +142,8 @@
         children: Object.keys(tree.children).map(function(k) {
           return formatD3Tree(tree.children[k].pointingTo, tree);
         }),
-        edgeLabels:  Object.keys(tree.children).map(function(k) {
-          return formatD3Tree(tree.children[k].pointingTo, tree);
+        edgeLabels: Object.keys(tree.children).map(function(k) {
+          return formatD3Tree(tree.children[k].label, tree);
         })
       };
     }
