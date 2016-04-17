@@ -185,7 +185,7 @@ toJson' rootId tree string =
                             in
                                 ( fromChar c
                                 , Json.object
-                                    [ ( "label", Json.string <| slice edge.labelStart labelEnd string )
+                                    [ ( "label", Json.string <| slice edge.labelStart (labelEnd) string )
                                     , ( "pointingTo", toJson' edge.pointingTo tree string )
                                     ]
                                 )

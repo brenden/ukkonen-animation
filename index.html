@@ -99,7 +99,9 @@
     var width = 960 - margin.right - margin.left;
     var height = 700 - margin.top - margin.bottom;
     var duration = 750;
-    var tree = d3.layout.tree().size([height, width]);
+    var tree = d3.layout.tree()
+      .size([height, width])
+      .separation(function() { return 2; });
     var root;
     var i = 0;
 
@@ -118,7 +120,6 @@
     // Subscribe to changes to the tree from elm, and update D3 when the tree
     // data changes
     ukkonenVisualization.ports.tree.subscribe(function(x) {
-      console.log(x)
       root = formatD3Tree(x, null);
       root.x = height / 2;
       root.y = 0;
@@ -133,17 +134,19 @@
      *
      * @param (Object) tree
      * @param (Object) parent
+     * @param (Int) childNumber
      * @return (Object)
      */
-    function formatD3Tree(tree, parent) {
+    function formatD3Tree(tree, parent, childNumber) {
       return {
         id: tree.id,
         parent: parent,
-        children: Object.keys(tree.children).map(function(k) {
-          return formatD3Tree(tree.children[k].pointingTo, tree);
+        childNumber: childNumber,
+        children: Object.keys(tree.children).map(function(k, i) {
+          return formatD3Tree(tree.children[k].pointingTo, tree, i);
         }),
         edgeLabels: Object.keys(tree.children).map(function(k) {
-          return formatD3Tree(tree.children[k].label, tree);
+          return tree.children[k].label;
         })
       };
     }
@@ -221,8 +224,7 @@
         .attr("y2", function(d) { return d.source.x; });
 
       // Update the link labels
-      linkEnter.append("text")
-        .text(function(d) { return "test"; });
+      linkEnter.append("text");
 
       // Transition links to their new position.
       link.transition()
@@ -251,6 +253,9 @@
         })
         .attr("y", function(d) {
           return d.source.x + (d.target.x - d.source.x)/2 - 5;
+        })
+        .text(function(d) {
+          return d.source.edgeLabels[d.target.childNumber];
         });
 
       // Transition exiting links to parent's new position

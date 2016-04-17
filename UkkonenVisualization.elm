@@ -9,6 +9,7 @@ import Graphics.Element exposing (..)
 import Graphics.Input exposing (..)
 import Graphics.Input.Field exposing (..)
 import Json.Encode as Json
+import String exposing (..)
 import Window
 import UkkonenTree exposing (..)
 import UkkonenAlgorithm exposing (..)
@@ -28,7 +29,7 @@ port tree =
         (\( currentStep, steps, string ) ->
             case Array.get currentStep steps of
                 Just state ->
-                    toJson state.tree string
+                    toJson state.tree (String.slice 0 (currentStep + 1) string)
 
                 Nothing ->
                     toJson emptyTree string
@@ -142,7 +143,7 @@ update action model =
             { model | inputField = content }
 
         Build string ->
-            { model | string = string, steps = fromList <| UkkonenAlgorithm.steps string }
+            { model | string = string, steps = Array.fromList <| UkkonenAlgorithm.steps string }
 
         Back ->
             { model | currentStep = max (model.currentStep - 1) 0 }
