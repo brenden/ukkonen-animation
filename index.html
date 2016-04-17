@@ -77,6 +77,14 @@
         stroke: #ccc;
         stroke-width: 2px;
       }
+
+      .suffix-link {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 2px;
+        stroke-dasharray: 1, 5;
+        stroke-linecap: round;
+      }
     </style>
   </head>
 
@@ -104,6 +112,11 @@
       .separation(function() { return 2; });
     var root;
     var i = 0;
+    var treeNodes = {};
+
+    var diagonal = d3.svg.diagonal().projection(function(d) {
+      return [d.y, d.x];
+    });
 
     var svg = d3.select("#steps-wrapper").append("svg")
       .attr("width", width + margin.right + margin.left)
@@ -147,7 +160,8 @@
         }),
         edgeLabels: Object.keys(tree.children).map(function(k) {
           return tree.children[k].label;
-        })
+        }),
+        suffixLink: tree.suffixLink
       };
     }
 
@@ -162,7 +176,10 @@
         links = tree.links(nodes);
 
       // Normalize for fixed-depth.
-      nodes.forEach(function(d) { d.y = d.depth * 180; });
+      nodes.forEach(function(d) {
+        d.y = d.depth * 180;
+        treeNodes[d.id] = d;
+      });
 
       // Update the nodes
       var node = nodeGroup.selectAll("g.node")
@@ -180,18 +197,31 @@
         .attr("r", 1e-6)
         .style("fill", "lightsteelblue");
 
-      // Transition nodes to their new position.
-      var nodeUpdate = node.transition()
-        .duration(duration)
+      nodeEnter.append("path")
+        .attr('class', 'suffix-link')
+
+      var nodeUpdate = node.transition();
+
+      // Draw suffix links
+      nodeUpdate.duration(duration)
+        .select(".suffix-link")
+        .attr("d", function(d) {
+          var target = treeNodes[d.suffixLink];
+          return diagonal({
+            source: {x: 0, y: 0},
+            target: target
+              ? {x: target.x - d.x, y: target.y - d.y}
+              : {x: 0, y: 0}});
+        });
+
+      // Transition nodes to their new position
+      nodeUpdate.duration(duration)
         .attr("transform", function(d) {
           return "translate(" + d.y + "," + d.x + ")";
         });
 
       nodeUpdate.select("circle")
         .attr("r", 10);
-
-      nodeUpdate.select("text")
-        .style("fill-opacity", 1);
 
       // Transition exiting nodes to the parent's new position.
       var nodeExit = node.exit().transition()
