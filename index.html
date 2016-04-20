@@ -84,6 +84,12 @@
         stroke-width: 2px;
         stroke-dasharray: 1, 5;
         stroke-linecap: round;
+        visibility: hidden;
+      }
+
+      .arrow-marker {
+        marker-end: url(#arrowMarker);
+        visibility: visible;
       }
     </style>
   </head>
@@ -129,6 +135,20 @@
 
     var nodeGroup = svg.append("g")
       .attr("class", "node-group");
+
+    var suffixLinkGroup = svg.append("g")
+      .attr("class", "suffix-link-group");
+
+    svg.append('defs')
+      .append('marker')
+      .attr('id', 'arrowMarker')
+      .attr('refX', 7)
+      .attr('refY', 7)
+      .attr('markerWidth', 13)
+      .attr('markerHeight', 13)
+      .append('path')
+      .attr('d', 'M0,0 L13,0 L7,13 L0,0')
+      .attr('style', 'fill: red;');
 
     // Subscribe to changes to the tree from elm, and update D3 when the tree
     // data changes
@@ -181,7 +201,10 @@
         treeNodes[d.id] = d;
       });
 
-      // Update the nodes
+
+      /**
+       * Update the nodes
+       */
       var node = nodeGroup.selectAll("g.node")
         .data(nodes, function(d) { return d.id; });
 
@@ -197,22 +220,7 @@
         .attr("r", 1e-6)
         .style("fill", "lightsteelblue");
 
-      nodeEnter.append("path")
-        .attr('class', 'suffix-link')
-
       var nodeUpdate = node.transition();
-
-      // Draw suffix links
-      nodeUpdate.duration(duration)
-        .select(".suffix-link")
-        .attr("d", function(d) {
-          var target = treeNodes[d.suffixLink];
-          return diagonal({
-            source: {x: 0, y: 0},
-            target: target
-              ? {x: target.x - d.x, y: target.y - d.y}
-              : {x: 0, y: 0}});
-        });
 
       // Transition nodes to their new position
       nodeUpdate.duration(duration)
@@ -238,7 +246,33 @@
       nodeExit.select("text")
         .style("fill-opacity", 1e-6);
 
-      // Update the links
+
+      /**
+       * Update the suffix links
+       */
+      var suffixLink = suffixLinkGroup.selectAll("path.suffix-link")
+        .data(nodes, function(d) { return d.id; });
+
+      var suffixLinkEnter = suffixLink.enter().append("path")
+        .attr('class', 'suffix-link');
+
+      suffixLink.transition().duration(duration)
+        .attr("d", function(d) {
+          var target = treeNodes[d.suffixLink];
+          return diagonal({
+            source: {x: d.x, y: d.y},
+            target: target
+              ? {x: target.x , y: target.y}
+              : {x: d.x, y: d.y}});
+        })
+        .attr('class', function(d) {
+          return treeNodes[d.suffixLink] ? 'suffix-link arrow-marker' : 'suffix-link';
+        });
+
+
+      /**
+       * Update the links
+       */
       var link = linkGroup.selectAll("g.ll")
         .data(links, function(d) { return d.target.id; });
 
