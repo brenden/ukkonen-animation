@@ -210,6 +210,7 @@ insert' newChar state =
                                         EndOfString
                                         treeWithNextSuffixNode
                                 , activePoint = newActivePoint
+                                , lastSplitNode = Nothing
                               }
                             ]
 
