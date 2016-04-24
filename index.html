@@ -142,13 +142,13 @@
     svg.append('defs')
       .append('marker')
       .attr('id', 'arrowMarker')
-      .attr('refX', 7)
+      .attr('refX', 5)
       .attr('refY', 7)
-      .attr('markerWidth', 13)
+      .attr('markerWidth', 9)
       .attr('markerHeight', 13)
       .append('path')
-      .attr('d', 'M0,0 L13,0 L7,13 L0,0')
-      .attr('style', 'fill: red;');
+      .attr('d', 'M0,0 L9,0 L5,13 L0,0')
+      .attr('style', 'fill: #ccc;');
 
     // Subscribe to changes to the tree from elm, and update D3 when the tree
     // data changes
@@ -259,14 +259,30 @@
       suffixLink.transition().duration(duration)
         .attr("d", function(d) {
           var target = treeNodes[d.suffixLink];
-          return diagonal({
-            source: {x: d.x, y: d.y},
-            target: target
-              ? {x: target.x , y: target.y}
-              : {x: d.x, y: d.y}});
+
+          if (target) {
+            var padDist = 28;
+            var xLinkDist = target.x - d.x;
+            var yLinkDist = target.y - d.y;
+            var theta = Math.atan(yLinkDist / xLinkDist);
+            var xArrowPad = Math.cos(theta) * padDist;
+            var yArrowPad = Math.sin(theta) * padDist;
+
+            return diagonal({
+              source: {x: d.x, y: d.y},
+              target: {x: target.x - xArrowPad, y: target.y - yArrowPad}
+            });
+          } else {
+            return diagonal({
+              source: {x: d.x, y: d.y},
+              target: {x: d.x, y: d.y}
+            });
+          }
         })
         .attr('class', function(d) {
-          return treeNodes[d.suffixLink] ? 'suffix-link arrow-marker' : 'suffix-link';
+          return treeNodes[d.suffixLink]
+            ? 'suffix-link arrow-marker'
+            : 'suffix-link';
         });
 
 

@@ -29,7 +29,9 @@ port tree =
         (\( currentStep, steps, string ) ->
             case Array.get currentStep steps of
                 Just state ->
-                    toJson state.tree (String.slice 0 (currentStep + 1) string)
+                    let _ = Debug.log (UkkonenTree.toString state.tree) state in
+                    toJson state.tree (String.slice 0 (currentStep + 1)
+                           (String.fromList (Array.toList state.string)))
 
                 Nothing ->
                     toJson emptyTree string
