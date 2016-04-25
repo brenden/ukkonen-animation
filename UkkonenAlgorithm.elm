@@ -67,7 +67,7 @@ insert' newChar state =
                     -- node, then set the active edge to that edge.
                     Just edge ->
                         [ { state
-                            | activePoint = { normedActivePoint | edge = Just (newChar, 1) }
+                            | activePoint = { normedActivePoint | edge = Just ( newChar, 1 ) }
                             , remainder = state.remainder + 1
                           }
                         ]
@@ -108,7 +108,7 @@ insert' newChar state =
                             -- the remainder.
                             if newChar == c then
                                 [ { state
-                                    | activePoint = { normedActivePoint | edge = Just (edgeChar, edgeSteps + 1) }
+                                    | activePoint = { normedActivePoint | edge = Just ( edgeChar, edgeSteps + 1 ) }
                                     , remainder = state.remainder + 1
                                   }
                                 ]
@@ -220,7 +220,9 @@ insert' newChar state =
 normalizeActivePoint : Array Char -> ActivePoint -> UkkonenTree -> ActivePoint
 normalizeActivePoint string activePoint tree =
     case activePoint.edge of
-        Nothing -> activePoint
+        Nothing ->
+            activePoint
+
         Just ( edgeChar, edgeSteps ) ->
             case
                 getEdge
@@ -243,12 +245,14 @@ normalizeActivePoint string activePoint tree =
                         else
                             normalizeActivePoint
                                 string
-                                { activePoint | nodeId = activeEdge.pointingTo,
-                                  edge = Just (getChar (activeEdge.labelStart + activeEdgeLength) string, edgeSteps - activeEdgeLength ) }
+                                { activePoint
+                                    | nodeId = activeEdge.pointingTo
+                                    , edge = Just ( getChar (activeEdge.labelStart + activeEdgeLength) string, edgeSteps - activeEdgeLength )
+                                }
                                 tree
 
-                Nothing -> activePoint
-
+                Nothing ->
+                    activePoint
 
 
 {-| Creates a list of all intermediary states encountered while building the
