@@ -74,13 +74,13 @@
 
       .link {
         fill: none;
-        stroke: #ccc;
+        stroke: #797979;
         stroke-width: 2px;
       }
 
       .suffix-link {
         fill: none;
-        stroke: #ccc;
+        stroke: #CCCCCC;
         stroke-width: 2px;
         stroke-dasharray: 1, 5;
         stroke-linecap: round;
@@ -130,25 +130,27 @@
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    var suffixLinkGroup = svg.append("g")
+      .attr("class", "suffix-link-group");
+
     var linkGroup = svg.append("g")
       .attr("class", "link-group");
 
     var nodeGroup = svg.append("g")
       .attr("class", "node-group");
 
-    var suffixLinkGroup = svg.append("g")
-      .attr("class", "suffix-link-group");
-
     svg.append('defs')
       .append('marker')
       .attr('id', 'arrowMarker')
-      .attr('refX', 5)
-      .attr('refY', 7)
-      .attr('markerWidth', 9)
-      .attr('markerHeight', 13)
-      .append('path')
-      .attr('d', 'M0,0 L9,0 L5,13 L0,0')
-      .attr('style', 'fill: #ccc;');
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 20)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr('style', 'fill: #797979;');
 
     // Subscribe to changes to the tree from elm, and update D3 when the tree
     // data changes
@@ -257,27 +259,40 @@
         .attr('class', 'suffix-link');
 
       suffixLink.transition().duration(duration)
-        .attr("d", function(d) {
+        .attr('d', function(d) {
           var target = treeNodes[d.suffixLink];
 
+          if (target) {
+            var dx = target.x - d.x;
+            var dy = target.y - d.y;
+            var dr = Math.sqrt(dx * dx + dy * dy);
+
+            return "M" + d.y + " " + d.x +
+                   "A" + dr + " " + dr + " 0 0 1 " +
+                     target.y + " " +
+                     target.x;
+
+          } else {
+            return "M" + d.y + " " + d.x +
+                   "A" + dr + " " + dr + " 0 0 1 " + d.y + " " + d.x;
+          }
+
+          /*
           if (target) {
             var padDist = 28;
             var xLinkDist = target.x - d.x;
             var yLinkDist = target.y - d.y;
             var theta = Math.atan(yLinkDist / xLinkDist);
-            var xArrowPad = Math.cos(theta) * padDist;
-            var yArrowPad = Math.sin(theta) * padDist;
+            var xArrowPad = 0;//Math.cos(theta) * padDist;
+            var yArrowPad = 0;//Math.sin(theta) * padDist;
 
             return diagonal({
               source: {x: d.x, y: d.y},
               target: {x: target.x - xArrowPad, y: target.y - yArrowPad}
             });
           } else {
-            return diagonal({
-              source: {x: d.x, y: d.y},
-              target: {x: d.x, y: d.y}
-            });
           }
+          */
         })
         .attr('class', function(d) {
           return treeNodes[d.suffixLink]
