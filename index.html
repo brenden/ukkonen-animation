@@ -173,17 +173,30 @@
      * @return (Object)
      */
     function formatD3Tree(tree, parent, childNumber) {
+      var treeChildrenKeys = Object.keys(tree.children);
+      var activeEdgeChild = null;
+      var activeEdgeSteps = null;
+
+      treeChildrenKeys.forEach(function(k, i) {
+        if (tree.children[k].edgeSteps) {
+          activeEdgeChild = i;
+          activeEdgeSteps = tree.children[k].edgeSteps;
+        }
+      });
+
       return {
         id: tree.id,
         parent: parent,
         childNumber: childNumber,
         isActivePoint: tree.isActivePoint,
-        children: Object.keys(tree.children).map(function(k, i) {
+        children: treeChildrenKeys.map(function(k, i) {
           return formatD3Tree(tree.children[k].pointingTo, tree, i);
         }),
-        edgeLabels: Object.keys(tree.children).map(function(k) {
+        edgeLabels: treeChildrenKeys.map(function(k) {
           return tree.children[k].label;
         }),
+        activeEdgeChild: activeEdgeChild,
+        activeEdgeSteps: activeEdgeSteps,
         suffixLink: tree.suffixLink
       };
     }
@@ -335,7 +348,15 @@
           return d.source.x + (d.target.x - d.source.x)/2 - 5;
         })
         .text(function(d) {
-          return d.source.edgeLabels[d.target.childNumber];
+          var edgeLabel = d.source.edgeLabels[d.target.childNumber];
+
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            var edgeSteps = d.source.activeEdgeSteps;
+            return edgeLabel.slice(0, edgeSteps) + "|"
+              + edgeLabel.slice(edgeSteps);
+          } else {
+            return edgeLabel;
+          }
         });
 
       // Transition exiting links to parent's new position

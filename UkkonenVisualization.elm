@@ -203,6 +203,8 @@ treeJson' : Int -> UkkonenTree -> ActivePoint -> String -> Json.Value
 treeJson' rootId tree activePoint string =
     let
         root = getNode rootId tree
+
+        isActivePoint = (activePoint.nodeId == rootId)
     in
         Json.object
             [ ( "id", Json.int rootId )
@@ -214,7 +216,7 @@ treeJson' rootId tree activePoint string =
                     Nothing ->
                         Json.null
               )
-            , ( "isActivePoint", Json.bool (activePoint.nodeId == rootId) )
+            , ( "isActivePoint", Json.bool isActivePoint )
             , ( "children"
               , Json.object
                     (List.map
@@ -232,6 +234,17 @@ treeJson' rootId tree activePoint string =
                                 , Json.object
                                     [ ( "label", Json.string <| String.slice edge.labelStart (labelEnd) string )
                                     , ( "pointingTo", treeJson' edge.pointingTo tree activePoint string )
+                                    , ( "edgeSteps"
+                                      , case activePoint.edge of
+                                            Just ( ac, edgeSteps ) ->
+                                                if (isActivePoint && c == ac) then
+                                                    Json.int edgeSteps
+                                                else
+                                                    Json.null
+
+                                            Nothing ->
+                                                Json.null
+                                      )
                                     ]
                                 )
                         )
