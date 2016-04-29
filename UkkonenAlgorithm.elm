@@ -1,4 +1,4 @@
-module UkkonenAlgorithm (steps, UkkonenState) where
+module UkkonenAlgorithm (steps, UkkonenState, initialState, ActivePoint) where
 
 import UkkonenTree exposing (..)
 import Array exposing (..)
@@ -53,21 +53,19 @@ insert' newChar state =
         -- Get convenient references to the state record's fields
         { tree, remainder, activePoint, string, lastSplitNode } = state
 
-        normedActivePoint = normalizeActivePoint string activePoint tree
-
         -- Get the index of the character being inserted
         i = Array.length string - 1
     in
-        case normedActivePoint.edge of
+        case activePoint.edge of
             -- The case that there's currently no active edge, i.e the active point
             -- is a node in the suffix tree
             Nothing ->
-                case getEdge normedActivePoint.nodeId newChar tree of
+                case getEdge activePoint.nodeId newChar tree of
                     -- If an edge starting with the new character already exists at this
                     -- node, then set the active edge to that edge.
                     Just edge ->
                         [ { state
-                            | activePoint = { normedActivePoint | edge = Just ( newChar, 1 ) }
+                            | activePoint = { activePoint | edge = Just ( newChar, 1 ) }
                             , remainder = state.remainder + 1
                           }
                         ]
@@ -79,7 +77,7 @@ insert' newChar state =
 
                             newTree2 =
                                 setEdge
-                                    normedActivePoint.nodeId
+                                    activePoint.nodeId
                                     newId
                                     newChar
                                     i
@@ -93,7 +91,7 @@ insert' newChar state =
 
             -- The case that there is an active edge defined
             Just ( edgeChar, edgeSteps ) ->
-                case getEdge normedActivePoint.nodeId edgeChar tree of
+                case getEdge activePoint.nodeId edgeChar tree of
                     Just activeEdge ->
                         let
                             -- This is the index of the input string that the current edge
@@ -108,7 +106,7 @@ insert' newChar state =
                             -- the remainder.
                             if newChar == c then
                                 [ { state
-                                    | activePoint = { normedActivePoint | edge = Just ( edgeChar, edgeSteps + 1 ) }
+                                    | activePoint = normalizeActivePoint string { activePoint | edge = Just ( edgeChar, edgeSteps + 1 ) } tree
                                     , remainder = state.remainder + 1
                                   }
                                 ]
@@ -140,7 +138,7 @@ insert' newChar state =
                                     -- Common edge shared by the suffixes
                                     newTree5 =
                                         setEdge
-                                            normedActivePoint.nodeId
+                                            activePoint.nodeId
                                             newNodeId1
                                             edgeChar
                                             activeEdge.labelStart
@@ -160,8 +158,8 @@ insert' newChar state =
 
                                     -- Update the active point
                                     newActivePoint =
-                                        if normedActivePoint.nodeId == 0 then
-                                            { normedActivePoint
+                                        if activePoint.nodeId == 0 then
+                                            { activePoint
                                                 | edge =
                                                     Just
                                                         ( getChar
@@ -172,20 +170,20 @@ insert' newChar state =
                                             }
                                         else
                                             let
-                                                activeNode = getNode normedActivePoint.nodeId tree
+                                                activeNode = getNode activePoint.nodeId tree
                                             in
                                                 case activeNode.suffixLink of
                                                     Just nodeId ->
-                                                        { normedActivePoint | nodeId = nodeId }
+                                                        { activePoint | nodeId = nodeId }
 
                                                     Nothing ->
-                                                        { normedActivePoint | nodeId = 0 }
+                                                        { activePoint | nodeId = 0 }
 
                                     -- Update the state
                                     newState =
                                         { state
                                             | tree = newTree6
-                                            , activePoint = newActivePoint
+                                            , activePoint = normalizeActivePoint string newActivePoint tree
                                             , remainder = state.remainder - 1
                                             , lastSplitNode = Just newNodeId1
                                         }
@@ -198,12 +196,12 @@ insert' newChar state =
                         let
                             ( treeWithNextSuffixNode, nextSuffixNode ) = addNode tree
 
-                            newActivePoint = { normedActivePoint | edge = Nothing }
+                            newActivePoint = { activePoint | edge = Nothing }
                         in
                             [ { state
                                 | tree =
                                     setEdge
-                                        normedActivePoint.nodeId
+                                        activePoint.nodeId
                                         nextSuffixNode
                                         newChar
                                         i

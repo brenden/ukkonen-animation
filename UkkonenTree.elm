@@ -148,54 +148,6 @@ toString' level rootId tree =
                )
 
 
-{-| Prints out a JSON representation of the tree
--}
-toJson : UkkonenTree -> String -> Json.Value
-toJson tree string =
-    toJson' 0 tree string
-
-
-toJson' : Int -> UkkonenTree -> String -> Json.Value
-toJson' rootId tree string =
-    let
-        root = getNode rootId tree
-    in
-        Json.object
-            [ ( "id", Json.int rootId )
-            , ( "suffixLink"
-              , case root.suffixLink of
-                    Just n ->
-                        Json.int n
-
-                    Nothing ->
-                        Json.null
-              )
-            , ( "children"
-              , Json.object
-                    (List.map
-                        (\( c, edge ) ->
-                            let
-                                labelEnd =
-                                    case edge.labelEnd of
-                                        Definite l ->
-                                            l
-
-                                        EndOfString ->
-                                            String.length string
-                            in
-                                ( fromChar c
-                                , Json.object
-                                    [ ( "label", Json.string <| slice edge.labelStart (labelEnd) string )
-                                    , ( "pointingTo", toJson' edge.pointingTo tree string )
-                                    ]
-                                )
-                        )
-                        (Dict.toList root.edges)
-                    )
-              )
-            ]
-
-
 {-| Convenince method for bulding strings that contain newlines
 -}
 newLine =

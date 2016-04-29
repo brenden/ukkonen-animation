@@ -177,6 +177,7 @@
         id: tree.id,
         parent: parent,
         childNumber: childNumber,
+        isActivePoint: tree.isActivePoint,
         children: Object.keys(tree.children).map(function(k, i) {
           return formatD3Tree(tree.children[k].pointingTo, tree, i);
         }),
@@ -220,7 +221,6 @@
 
       nodeEnter.append("circle")
         .attr("r", 1e-6)
-        .style("fill", "lightsteelblue");
 
       var nodeUpdate = node.transition();
 
@@ -231,7 +231,10 @@
         });
 
       nodeUpdate.select("circle")
-        .attr("r", 10);
+        .attr("r", 10)
+        .style("fill", function(d) {
+          return d.isActivePoint ? 'tomato' : 'lightsteelblue';
+        });
 
       // Transition exiting nodes to the parent's new position.
       var nodeExit = node.exit().transition()

@@ -5,6 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (id, class)
 import Text
 import Color exposing (..)
+import Dict
 import Graphics.Element exposing (..)
 import Graphics.Input exposing (..)
 import Graphics.Input.Field exposing (..)
@@ -29,19 +30,17 @@ port tree =
         (\( currentStep, steps, string ) ->
             case Array.get currentStep steps of
                 Just state ->
-                    let
-                        _ = Debug.log (UkkonenTree.toString state.tree) state
-                    in
-                        toJson
-                            state.tree
-                            (String.slice
-                                0
-                                (currentStep + 1)
-                                (String.fromList (Array.toList state.string))
-                            )
+                    treeJson
+                        state.tree
+                        state.activePoint
+                        (String.slice
+                            0
+                            (currentStep + 1)
+                            (String.fromList (Array.toList state.string))
+                        )
 
                 Nothing ->
-                    toJson emptyTree string
+                    treeJson emptyTree initialState.activePoint ""
         )
         (Signal.dropRepeats (Signal.map (\m -> ( m.currentStep, m.steps, m.string )) model))
 
@@ -191,3 +190,52 @@ view model =
                 ]
             ]
         ]
+
+
+{-| Prints out a JSON representation of the tree
+-}
+treeJson : UkkonenTree -> ActivePoint -> String -> Json.Value
+treeJson tree activePoint string =
+    treeJson' 0 tree activePoint string
+
+
+treeJson' : Int -> UkkonenTree -> ActivePoint -> String -> Json.Value
+treeJson' rootId tree activePoint string =
+    let
+        root = getNode rootId tree
+    in
+        Json.object
+            [ ( "id", Json.int rootId )
+            , ( "suffixLink"
+              , case root.suffixLink of
+                    Just n ->
+                        Json.int n
+
+                    Nothing ->
+                        Json.null
+              )
+            , ( "isActivePoint", Json.bool (activePoint.nodeId == rootId) )
+            , ( "children"
+              , Json.object
+                    (List.map
+                        (\( c, edge ) ->
+                            let
+                                labelEnd =
+                                    case edge.labelEnd of
+                                        Definite l ->
+                                            l
+
+                                        EndOfString ->
+                                            String.length string
+                            in
+                                ( fromChar c
+                                , Json.object
+                                    [ ( "label", Json.string <| String.slice edge.labelStart (labelEnd) string )
+                                    , ( "pointingTo", treeJson' edge.pointingTo tree activePoint string )
+                                    ]
+                                )
+                        )
+                        (Dict.toList root.edges)
+                    )
+              )
+            ]
