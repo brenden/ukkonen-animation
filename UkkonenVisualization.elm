@@ -180,7 +180,16 @@ view model =
                 [ div
                     [ id "narrative" ]
                     [ h2 [] [ text <| "Step " ++ Basics.toString model.currentStep ]
-                    , p [] [ text "Some explanation blah blah blah" ]
+                    , p
+                        []
+                        [ text
+                            <| case Array.get model.currentStep model.steps of
+                                Just state ->
+                                    (Basics.toString state.activePoint) ++ "\n \n" ++ (Basics.toString state.remainder)
+
+                                Nothing ->
+                                    ""
+                        ]
                     ]
                 , div
                     [ id "navigation" ]
@@ -232,7 +241,7 @@ treeJson' rootId tree activePoint string =
                             in
                                 ( fromChar c
                                 , Json.object
-                                    [ ( "label", Json.string <| String.slice edge.labelStart (labelEnd) string )
+                                    [ ( "label", Json.string <| String.slice edge.labelStart labelEnd string )
                                     , ( "pointingTo", treeJson' edge.pointingTo tree activePoint string )
                                     , ( "edgeSteps"
                                       , case activePoint.edge of

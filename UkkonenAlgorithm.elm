@@ -64,11 +64,18 @@ insert' newChar state =
                     -- If an edge starting with the new character already exists at this
                     -- node, then set the active edge to that edge.
                     Just edge ->
-                        [ { state
-                            | activePoint = { activePoint | edge = Just ( newChar, 1 ) }
-                            , remainder = state.remainder + 1
-                          }
-                        ]
+                        let
+                            newActivePoint =
+                                { activePoint
+                                    | edge = Just ( newChar, 1 )
+                                }
+                        in
+                            [ { state
+                                | activePoint = normalizeActivePoint string newActivePoint tree
+                                , remainder = state.remainder + 1
+                                , lastSplitNode = Nothing
+                              }
+                            ]
 
                     -- Otherwise we need to create a new edge pointing from this node
                     Nothing ->
@@ -84,10 +91,27 @@ insert' newChar state =
                                     EndOfString
                                     newTree
                         in
-                            [ { state
-                                | tree = newTree2
-                              }
-                            ]
+                            if state.remainder == 1 then
+                                let
+                                    newState =
+                                        { state
+                                            | tree = newTree2
+                                            , lastSplitNode = Nothing
+                                        }
+                                in
+                                    [ newState ]
+                            else
+                                let
+                                    newActivePoint = followSuffixLink activePoint tree
+
+                                    newState =
+                                        { state
+                                            | tree = newTree2
+                                            , activePoint = newActivePoint
+                                            , remainder = state.remainder - 1
+                                        }
+                                in
+                                    newState :: (insert' newChar newState)
 
             -- The case that there is an active edge defined
             Just ( edgeChar, edgeSteps ) ->
@@ -169,15 +193,7 @@ insert' newChar state =
                                                         )
                                             }
                                         else
-                                            let
-                                                activeNode = getNode activePoint.nodeId tree
-                                            in
-                                                case activeNode.suffixLink of
-                                                    Just nodeId ->
-                                                        { activePoint | nodeId = nodeId }
-
-                                                    Nothing ->
-                                                        { activePoint | nodeId = 0 }
+                                            followSuffixLink activePoint tree
 
                                     -- Update the state
                                     newState =
@@ -213,6 +229,19 @@ insert' newChar state =
                             ]
 
 
+followSuffixLink : ActivePoint -> UkkonenTree -> ActivePoint
+followSuffixLink activePoint tree =
+    let
+        activeNode = getNode activePoint.nodeId tree
+    in
+        case activeNode.suffixLink of
+            Just nodeId ->
+                { activePoint | nodeId = nodeId }
+
+            Nothing ->
+                { activePoint | nodeId = 0 }
+
+
 {-|
 -}
 normalizeActivePoint : Array Char -> ActivePoint -> UkkonenTree -> ActivePoint
@@ -222,35 +251,38 @@ normalizeActivePoint string activePoint tree =
             activePoint
 
         Just ( edgeChar, edgeSteps ) ->
-            case
-                getEdge
-                    activePoint.nodeId
-                    edgeChar
-                    tree
-            of
-                Just activeEdge ->
-                    let
-                        activeEdgeLength =
-                            case activeEdge.labelEnd of
-                                EndOfString ->
-                                    (Array.length string) - activeEdge.labelStart
+            if edgeSteps == 0 then
+                { activePoint | edge = Nothing }
+            else
+                case
+                    getEdge
+                        activePoint.nodeId
+                        edgeChar
+                        tree
+                of
+                    Just activeEdge ->
+                        let
+                            activeEdgeLength =
+                                case activeEdge.labelEnd of
+                                    EndOfString ->
+                                        (Array.length string) - activeEdge.labelStart
 
-                                Definite end ->
-                                    end - activeEdge.labelStart
-                    in
-                        if edgeSteps <= activeEdgeLength then
-                            activePoint
-                        else
-                            normalizeActivePoint
-                                string
-                                { activePoint
-                                    | nodeId = activeEdge.pointingTo
-                                    , edge = Just ( getChar (activeEdge.labelStart + activeEdgeLength) string, edgeSteps - activeEdgeLength )
-                                }
-                                tree
+                                    Definite end ->
+                                        end - activeEdge.labelStart
+                        in
+                            if edgeSteps < activeEdgeLength then
+                                activePoint
+                            else
+                                normalizeActivePoint
+                                    string
+                                    { activePoint
+                                        | nodeId = activeEdge.pointingTo
+                                        , edge = Just ( getChar (activeEdge.labelStart + activeEdgeLength) string, edgeSteps - activeEdgeLength )
+                                    }
+                                    tree
 
-                Nothing ->
-                    activePoint
+                    Nothing ->
+                        activePoint
 
 
 {-| Creates a list of all intermediary states encountered while building the
