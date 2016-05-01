@@ -2,7 +2,8 @@ module UkkonenVisualization (..) where
 
 import Array exposing (..)
 import Html exposing (..)
-import Html.Attributes exposing (id, class)
+import Html.Attributes exposing (id, class, disabled)
+import Html.Events exposing (onClick)
 import Text
 import Color exposing (..)
 import Dict
@@ -114,14 +115,14 @@ stringUpdates =
         (Signal.sampleOn inputButton.signal inputString.signal)
 
 
-leftButton : Element
-leftButton =
-    Graphics.Input.button (Signal.message currentStepUpdates.address Back) "◀"
+leftButton : Bool -> Html
+leftButton enabled =
+    Html.button [ onClick currentStepUpdates.address Back, disabled <| not enabled ] [ text "◀" ]
 
 
-rightButton : Element
-rightButton =
-    Graphics.Input.button (Signal.message currentStepUpdates.address Forward) "▶"
+rightButton : Bool -> Html
+rightButton enabled =
+    Html.button [ onClick currentStepUpdates.address Forward, disabled <| not enabled ] [ text "▶" ]
 
 
 currentStepUpdates : Signal.Mailbox Action
@@ -151,7 +152,7 @@ update action model =
             { model | inputField = content }
 
         Build string ->
-            { model | string = string, steps = Array.fromList <| UkkonenAlgorithm.steps string }
+            { model | string = string, steps = Array.fromList <| UkkonenAlgorithm.steps string, currentStep = 0 }
 
         Back ->
             { model | currentStep = max (model.currentStep - 1) 0 }
@@ -165,40 +166,45 @@ update action model =
 
 view : Model -> Html
 view model =
-    section
-        [ id "visualization" ]
-        [ h1 [] [ text "Visualization of Ukkonen's Algorithm" ]
-        , div
-            [ id "input-string" ]
-            [ inputField model.inputField |> width 400 |> fromElement
-            , span [ id "input-button-wrapper" ] [ visualizeButton |> width 150 |> fromElement ]
-            ]
-        , div
-            [ id "steps-wrapper" ]
-            [ div
-                [ id "side-box" ]
-                [ div
-                    [ id "narrative" ]
-                    [ h2 [] [ text <| "Step " ++ Basics.toString model.currentStep ]
-                    , p
-                        []
-                        [ text
-                            <| case Array.get model.currentStep model.steps of
-                                Just state ->
-                                    (Basics.toString state.activePoint) ++ "\n \n" ++ (Basics.toString state.remainder)
+    let
+        leftButtonEnabled = model.currentStep > 0
 
-                                Nothing ->
-                                    ""
+        rightButtonEnabled = model.currentStep < (Array.length model.steps) - 1
+    in
+        section
+            [ id "visualization" ]
+            [ h1 [] [ text "Visualization of Ukkonen's Algorithm" ]
+            , div
+                [ id "input-string" ]
+                [ inputField model.inputField |> width 400 |> fromElement
+                , span [ id "input-button-wrapper" ] [ visualizeButton |> width 150 |> fromElement ]
+                ]
+            , div
+                [ id "steps-wrapper" ]
+                [ div
+                    [ id "side-box" ]
+                    [ div
+                        [ id "narrative" ]
+                        [ h2 [] [ text <| "Step " ++ Basics.toString model.currentStep ]
+                        , p
+                            []
+                            [ text
+                                <| case Array.get model.currentStep model.steps of
+                                    Just state ->
+                                        (Basics.toString state.activePoint) ++ "\n \n" ++ (Basics.toString state.remainder)
+
+                                    Nothing ->
+                                        ""
+                            ]
                         ]
-                    ]
-                , div
-                    [ id "navigation" ]
-                    [ span [ id "left-button-wrapper" ] [ leftButton |> width 50 |> fromElement ]
-                    , span [ id "right-button-wrapper" ] [ rightButton |> width 50 |> fromElement ]
+                    , div
+                        [ id "navigation" ]
+                        [ span [ id "left-button-wrapper" ] [ leftButton leftButtonEnabled ]
+                        , span [ id "right-button-wrapper" ] [ rightButton rightButtonEnabled ]
+                        ]
                     ]
                 ]
             ]
-        ]
 
 
 {-| Prints out a JSON representation of the tree
