@@ -41,7 +41,7 @@ port tree =
                         )
 
                 Nothing ->
-                    treeJson emptyTree initialState.activePoint ""
+                    Json.null
         )
         (Signal.dropRepeats (Signal.map (\m -> ( m.currentStep, m.steps, m.string )) model))
 
@@ -152,7 +152,10 @@ update action model =
             { model | inputField = content }
 
         Build string ->
-            { model | string = string, steps = Array.fromList <| UkkonenAlgorithm.steps string, currentStep = 0 }
+            let
+                steps = Array.fromList (initialState :: UkkonenAlgorithm.steps string)
+            in
+                { model | string = string, steps = steps, currentStep = 0 }
 
         Back ->
             { model | currentStep = max (model.currentStep - 1) 0 }

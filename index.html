@@ -156,6 +156,12 @@
     // data changes
     ukkonenVisualization.ports.tree.subscribe(function(x) {
       root = formatD3Tree(x, null);
+
+      if (root.children.length == 0) {
+        suffixLinkGroup.selectAll("*").remove();
+        linkGroup.selectAll("*").remove();
+      }
+
       root.x = height / 2;
       root.y = 0;
       updateD3Tree();
