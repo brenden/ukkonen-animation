@@ -176,7 +176,7 @@ view model =
     in
         section
             [ id "visualization" ]
-            [ h1 [] [ text "Visualization of Ukkonen's Algorithm" ]
+            [ h1 [] [ text "A Visualization of Ukkonen's Algorithm" ]
             , div
                 [ id "input-string" ]
                 [ inputField model.inputField |> width 400 |> fromElement

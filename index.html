@@ -1,29 +1,19 @@
 <html>
   <head>
     <meta charset=utf-8 />
-    <title>Visualization of Ukkonen's Algorithm</title>
+    <title>A Visualization of Ukkonen's Algorithm</title>
     <script src="elm.js"></script>
     <style>
-      #steps-wrapper svg {
-        float: left;
+      body {
+        font-family: sans-serif;
+        color: 
       }
 
-      #input-string {
-        width: 565px;
-        height: 50px;
+      h1, h2 {
+        font-weight: normal;
       }
 
-      #side-box {
-        float: left;
-        width: 350px;
-        background-color: #DDDDDD;
-        -webkit-border-radius: 4;
-        -moz-border-radius: 4;
-        border-radius: 4px;
-        margin-bottom: -20px;
-      }
-
-      #input-button-wrapper button {
+      button {
         background: #5775A9;
         background-image: -webkit-linear-gradient(top, #5775A9, #7a93bf);
         background-image: -moz-linear-gradient(top, #5775A9, #7a93bf);
@@ -35,12 +25,11 @@
         border-radius: 4px;
         border: none;
         color: #ffffff;
-        font-size: 18px;
         padding: 10px 20px 10px 20px;
         text-decoration: none;
       }
 
-      #input-button-wrapper button:hover {
+      button:hover {
         background: #698ac2;
         background-image: -webkit-linear-gradient(top, #698ac2, #839fcf);
         background-image: -moz-linear-gradient(top, #698ac2, #839fcf);
@@ -48,6 +37,34 @@
         background-image: -o-linear-gradient(top, #698ac2, #839fcf);
         background-image: linear-gradient(to bottom, #698ac2, #839fcf);
         text-decoration: none;
+      }
+
+      #steps-wrapper svg {
+        float: left;
+      }
+
+      #right-button-wrapper {
+        margin-left: 3px;
+      }
+
+      #input-string {
+        width: 565px;
+        height: 50px;
+      }
+
+      #side-box {
+        float: left;
+        width: 300px;
+        background-color: #EEEEEE;
+        -webkit-border-radius: 4;
+        -moz-border-radius: 4;
+        border-radius: 4px;
+        margin-bottom: -20px;
+        padding: 20px;
+      }
+
+      #narrative h2 {
+        margin: 0;
       }
 
       #input-button-wrapper {
@@ -58,6 +75,9 @@
         float: left;
       }
 
+     /*
+      * SVG styles
+      */
       .node {
         cursor: pointer;
       }
