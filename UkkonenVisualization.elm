@@ -152,10 +152,13 @@ update action model =
             { model | inputField = content }
 
         Build string ->
-            let
-                steps = Array.fromList (initialState :: UkkonenAlgorithm.steps string)
-            in
-                { model | string = string, steps = steps, currentStep = 0 }
+            if string == "" then
+                model
+            else
+                let
+                    steps = Array.fromList (initialState :: UkkonenAlgorithm.steps string)
+                in
+                    { model | string = string, steps = steps, currentStep = 0 }
 
         Back ->
             { model | currentStep = max (model.currentStep - 1) 0 }
