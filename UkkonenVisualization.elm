@@ -11,6 +11,7 @@ import Graphics.Element exposing (..)
 import Graphics.Input exposing (..)
 import Graphics.Input.Field exposing (..)
 import Json.Encode as Json
+import Markdown
 import String exposing (..)
 import Window
 import UkkonenTree exposing (..)
@@ -170,6 +171,17 @@ update action model =
             model
 
 
+introText : Html
+introText =
+    Markdown.toHtml """
+[Ukkonen's algorithm](#) is a method for constructing the [suffix tree](#) of a string in linear time. Suffix trees are useful because they can efficiently answer many questions about a string, such as how many times a given substring occurs within the string. Enter an input string below and you'll be able to watch step-by-step as Ukkonen's algorithm builds a suffix tree.
+
+I was inspired to build this visualization after reading [this great explanation](#) of Ukkonen's algorithm. I'd recommend reading that for an overview of how the algorithm works. Also helpful is the explanation given in [this paper](#).
+
+This page was created using [Elm](#) and [d3](#).
+"""
+
+
 view : Model -> Html
 view model =
     let
@@ -177,13 +189,17 @@ view model =
 
         rightButtonEnabled = model.currentStep < (Array.length model.steps) - 1
     in
-        section
+        div
             [ id "visualization" ]
-            [ h1 [] [ text "A Visualization of Ukkonen's Algorithm" ]
-            , div
-                [ id "input-string" ]
-                [ inputField model.inputField |> width 400 |> fromElement
-                , span [ id "input-button-wrapper" ] [ visualizeButton |> width 150 |> fromElement ]
+            [ div
+                [ id "heading" ]
+                [ h1 [] [ text "Visualization of Ukkonen's Algorithm" ]
+                , introText
+                , div
+                    [ id "input-string" ]
+                    [ inputField model.inputField |> width 400 |> fromElement
+                    , span [ id "input-button-wrapper" ] [ visualizeButton |> width 150 |> fromElement ]
+                    ]
                 ]
             , div
                 [ id "steps-wrapper" ]

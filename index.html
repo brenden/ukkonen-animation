@@ -1,16 +1,18 @@
 <html>
   <head>
     <meta charset=utf-8 />
-    <title>A Visualization of Ukkonen's Algorithm</title>
+    <title>Visualization of Ukkonen's Algorithm</title>
     <script src="elm.js"></script>
     <style>
       body {
         font-family: sans-serif;
-        color: 
+        margin: 0;
+        color: #444444;
       }
 
       h1, h2 {
         font-weight: normal;
+        margin: 0;
       }
 
       button {
@@ -39,6 +41,22 @@
         text-decoration: none;
       }
 
+      #heading {
+        background-color: #F9F9F9;
+        padding: 20px;
+        border-bottom: 1px solid #999999;
+      }
+
+      #heading h1 {
+        display: inline;
+        border-bottom: 1px solid #999999;
+        padding-bottom: 2px;
+      }
+
+      #heading p {
+        width: 760px;
+      }
+
       #steps-wrapper svg {
         float: left;
       }
@@ -50,17 +68,19 @@
       #input-string {
         width: 565px;
         height: 50px;
+        margin-top: 10px;
       }
 
       #side-box {
         float: left;
         width: 300px;
-        background-color: #EEEEEE;
+        background-color: #F9F9F9;
         -webkit-border-radius: 4;
         -moz-border-radius: 4;
         border-radius: 4px;
-        margin-bottom: -20px;
         padding: 20px;
+        margin: 20px 0 0 20px;
+        border: 1px solid #999999;
       }
 
       #narrative h2 {
