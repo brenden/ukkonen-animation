@@ -205,25 +205,30 @@ view model =
                 [ id "steps-wrapper" ]
                 [ div
                     [ id "side-box" ]
-                    [ div
-                        [ id "narrative" ]
-                        [ h2 [] [ text <| "Step " ++ Basics.toString model.currentStep ]
-                        , p
-                            []
-                            [ text
-                                <| case Array.get model.currentStep model.steps of
-                                    Just state ->
-                                        (Basics.toString state.activePoint) ++ "\n \n" ++ (Basics.toString state.remainder)
-
-                                    Nothing ->
-                                        ""
-                            ]
-                        ]
+                    [ h2 [] [ text <| "Step " ++ (Basics.toString (model.currentStep + 1)) ++ " of " ++ Basics.toString (Array.length model.steps) ]
                     , div
                         [ id "navigation" ]
                         [ span [ id "left-button-wrapper" ] [ leftButton leftButtonEnabled ]
                         , span [ id "right-button-wrapper" ] [ rightButton rightButtonEnabled ]
                         ]
+                    , case Array.get model.currentStep model.steps of
+                        Just state ->
+                            ul [id "algorithm-state"]
+                                [
+                                    li [] [
+                                        span [] [text "active_node:"],
+                                        span [id "var-active-node"] [text "0"]
+                                    ]
+                                ,   li [] [
+                                        span [] [text "active_edge:"],
+                                        span [id "var-active-edge"] [text "(a, 3)"]
+                                    ]
+                                ,   li [] [
+                                        span [] [text "remainder:"],
+                                        span [id "var-remainder"] [text "1"]
+                                    ]
+                                ]
+                        Nothing -> text ""
                     ]
                 ]
             ]

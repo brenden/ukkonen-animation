@@ -57,6 +57,47 @@
         width: 760px;
       }
 
+      #navigation {
+        margin-top: 15px;
+      }
+
+      #algorithm-state {
+        list-style: none;
+        padding: 0;
+      }
+
+      #algorithm-state li {
+        padding-bottom: 5px;
+        padding-top: 5px;
+        border-bottom: 1px solid #999999;
+      }
+
+      #algorithm-state li:last-child {
+        border-bottom: 0;
+      }
+
+      #algorithm-state li span:first-child {
+        width: 130px;
+        display: inline-block;
+        padding: 0;
+      }
+
+      #algorithm-state li span:last-child {
+        font-weight: bold;
+      }
+
+      #var-active-node {
+        color: #FF6347;
+      }
+
+      #var-active-edge {
+        color: #BE4FBA;
+      }
+
+      #var-remainder {
+        color: #68DA93;
+      }
+
       #steps-wrapper svg {
         float: left;
       }
@@ -73,7 +114,7 @@
 
       #side-box {
         float: left;
-        width: 300px;
+        width: 200px;
         background-color: #F9F9F9;
         -webkit-border-radius: 4;
         -moz-border-radius: 4;
@@ -81,10 +122,7 @@
         padding: 20px;
         margin: 20px 0 0 20px;
         border: 1px solid #999999;
-      }
-
-      #narrative h2 {
-        margin: 0;
+        display: none;
       }
 
       #input-button-wrapper {
@@ -104,7 +142,6 @@
 
       .node circle {
         fill: #fff;
-        stroke: steelblue;
         stroke-width: 3px;
       }
 
@@ -183,7 +220,7 @@
       .append('marker')
       .attr('id', 'arrowMarker')
       .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 20)
+      .attr("refX", 25)
       .attr("refY", 0)
       .attr("markerWidth", 6)
       .attr("markerHeight", 6)
@@ -196,6 +233,7 @@
     // data changes
     ukkonenVisualization.ports.tree.subscribe(function(x) {
       root = formatD3Tree(x, null);
+      d3.select("#side-box").style({display: "block"});
 
       if (root.children.length == 0) {
         suffixLinkGroup.selectAll("*").remove();
@@ -290,10 +328,14 @@
         });
 
       nodeUpdate.select("circle")
-        .attr("r", 10)
+        .attr("r", 15)
         .style("fill", function(d) {
           return d.isActivePoint ? 'tomato' : 'lightsteelblue';
+        })
+        .style("stroke", function(d) {
+          return d.isActivePoint ? '#B94935' : 'steelblue';
         });
+
 
       // Transition exiting nodes to the parent's new position.
       var nodeExit = node.exit().transition()
