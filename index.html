@@ -186,7 +186,7 @@
     var treeGraph = document.getElementById('tree-graph');
 
     // Set up d3 tree visualization
-    var margin = {top: 15, right: 15, bottom: 15, left: 15};
+    var margin = {top: 20, right: 20, bottom: 10, left: 20};
     var width = 960 - margin.right - margin.left;
     var height = 700 - margin.top - margin.bottom;
     var duration = 750;
@@ -318,6 +318,12 @@
 
       nodeEnter.append("circle")
         .attr("r", 1e-6)
+
+      nodeEnter.append("text")
+        .attr("transform", "translate(0, 4)")
+        .attr("opacity", 0.7)
+        .style("text-anchor", "middle")
+        .text(function(d) { return d.id });
 
       var nodeUpdate = node.transition();
 
