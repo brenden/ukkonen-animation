@@ -213,22 +213,40 @@ view model =
                         ]
                     , case Array.get model.currentStep model.steps of
                         Just state ->
-                            ul [id "algorithm-state"]
-                                [
-                                    li [] [
-                                        span [] [text "active_node:"],
-                                        span [id "var-active-node"] [text "0"]
+                            let
+                                activeNodeString = Basics.toString state.activePoint.nodeId
+
+                                activeEdgeString =
+                                    case state.activePoint.edge of
+                                        Just edge ->
+                                            Basics.toString edge
+
+                                        Nothing ->
+                                            "none"
+
+                                remainderString = Basics.toString state.remainder
+                            in
+                                ul
+                                    [ id "algorithm-state" ]
+                                    [ li
+                                        []
+                                        [ span [] [ text "active_node:" ]
+                                        , span [ id "var-active-node" ] [ text activeNodeString ]
+                                        ]
+                                    , li
+                                        []
+                                        [ span [] [ text "active_edge:" ]
+                                        , span [ id "var-active-edge" ] [ text activeEdgeString ]
+                                        ]
+                                    , li
+                                        []
+                                        [ span [] [ text "remainder:" ]
+                                        , span [ id "var-remainder" ] [ text remainderString ]
+                                        ]
                                     ]
-                                ,   li [] [
-                                        span [] [text "active_edge:"],
-                                        span [id "var-active-edge"] [text "(a, 3)"]
-                                    ]
-                                ,   li [] [
-                                        span [] [text "remainder:"],
-                                        span [id "var-remainder"] [text "1"]
-                                    ]
-                                ]
-                        Nothing -> text ""
+
+                        Nothing ->
+                            text ""
                     ]
                 ]
             ]
