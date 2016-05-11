@@ -11,6 +11,7 @@ import Graphics.Element exposing (..)
 import Graphics.Input exposing (..)
 import Graphics.Input.Field exposing (..)
 import Json.Encode as Json
+import List exposing (..)
 import Markdown
 import String exposing (..)
 import Window
@@ -248,8 +249,34 @@ view model =
                         Nothing ->
                             text ""
                     ]
+                , div [ id "letter-blocks" ] (letterBlocks model.string model.currentStep model.steps)
                 ]
             ]
+
+
+{-| Generate the input string letter blocks
+-}
+letterBlocks : String -> Int -> Array UkkonenState -> List Html
+letterBlocks string currentStep steps =
+    case Array.get currentStep steps of
+        Just state ->
+            List.indexedMap
+                (\i c ->
+                    let
+                        highlighted = i >= currentStep - state.remainder && i < currentStep
+                    in
+                        div
+                            (if highlighted then
+                                [ class "highlighted" ]
+                             else
+                                []
+                            )
+                            [ text (fromChar c) ]
+                )
+                (String.toList string)
+
+        Nothing ->
+            []
 
 
 {-| Prints out a JSON representation of the tree
