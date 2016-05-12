@@ -263,7 +263,9 @@ letterBlocks string currentStep steps =
             List.indexedMap
                 (\i c ->
                     let
-                        highlighted = i >= currentStep - state.remainder && i < currentStep
+                        charsAdded = state.charsAdded
+
+                        highlighted = i <= charsAdded && i > charsAdded - state.remainder
                     in
                         div
                             (if highlighted then

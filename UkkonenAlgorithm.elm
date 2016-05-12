@@ -19,6 +19,7 @@ type alias UkkonenState =
     , activePoint : ActivePoint
     , string : Array Char
     , lastSplitNode : Maybe NodeId
+    , charsAdded : Int
     }
 
 
@@ -34,6 +35,7 @@ initialState =
         }
     , string = Array.empty
     , lastSplitNode = Nothing
+    , charsAdded = 0
     }
 
 
@@ -51,7 +53,7 @@ insert' : Char -> UkkonenState -> List UkkonenState
 insert' newChar state =
     let
         -- Get convenient references to the state record's fields
-        { tree, remainder, activePoint, string, lastSplitNode } = state
+        { tree, remainder, activePoint, string, lastSplitNode, charsAdded } = state
 
         -- Get the index of the character being inserted
         i = Array.length string - 1
@@ -74,6 +76,7 @@ insert' newChar state =
                                 | activePoint = normalizeActivePoint string newActivePoint tree
                                 , remainder = state.remainder + 1
                                 , lastSplitNode = Nothing
+                                , charsAdded = charsAdded + 1
                               }
                             ]
 
@@ -97,6 +100,7 @@ insert' newChar state =
                                         { state
                                             | tree = newTree2
                                             , lastSplitNode = Nothing
+                                            , charsAdded = charsAdded + 1
                                         }
                                 in
                                     [ newState ]
@@ -132,6 +136,7 @@ insert' newChar state =
                                 [ { state
                                     | activePoint = normalizeActivePoint string { activePoint | edge = Just ( edgeChar, edgeSteps + 1 ) } tree
                                     , remainder = state.remainder + 1
+                                    , charsAdded = charsAdded + 1
                                   }
                                 ]
                             else
@@ -225,6 +230,7 @@ insert' newChar state =
                                         treeWithNextSuffixNode
                                 , activePoint = newActivePoint
                                 , lastSplitNode = Nothing
+                                , charsAdded = charsAdded + 1
                               }
                             ]
 
