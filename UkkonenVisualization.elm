@@ -265,11 +265,11 @@ letterBlocks string currentStep steps =
                     let
                         charsAdded = state.charsAdded
 
-                        highlighted = i <= charsAdded && i > charsAdded - state.remainder
+                        added = i < charsAdded
                     in
                         div
-                            (if highlighted then
-                                [ class "highlighted" ]
+                            (if added then
+                                [ class "added" ]
                              else
                                 []
                             )
