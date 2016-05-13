@@ -265,14 +265,20 @@ letterBlocks string currentStep steps =
                     let
                         charsAdded = state.charsAdded
 
-                        added = i < charsAdded
+                        added =
+                            if i < charsAdded then
+                                [ class "added" ]
+                            else
+                                []
+
+                        remainder =
+                            if i > charsAdded - state.remainder && i < charsAdded then
+                                [ class "remainder" ]
+                            else
+                                []
                     in
                         div
-                            (if added then
-                                [ class "added" ]
-                             else
-                                []
-                            )
+                            (List.append added remainder)
                             [ text (fromChar c) ]
                 )
                 (String.toList string)
