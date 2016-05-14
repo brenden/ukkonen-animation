@@ -221,11 +221,19 @@ view model =
 
                                 activeEdgeString =
                                     case state.activePoint.edge of
-                                        Just edge ->
-                                            Basics.toString edge
+                                        Just ( edge, steps ) ->
+                                            fromChar edge
 
                                         Nothing ->
                                             "none"
+
+                                activeLengthString =
+                                    case state.activePoint.edge of
+                                        Just ( edge, steps ) ->
+                                            Basics.toString steps
+
+                                        Nothing ->
+                                            "0"
 
                                 remainderString = Basics.toString (state.remainder - 1)
                             in
@@ -240,6 +248,11 @@ view model =
                                         []
                                         [ span [] [ text "active_edge:" ]
                                         , span [ id "var-active-edge" ] [ text activeEdgeString ]
+                                        ]
+                                    , li
+                                        []
+                                        [ span [] [ text "active_length:" ]
+                                        , span [ id "var-active-length" ] [ text activeLengthString ]
                                         ]
                                     , li
                                         []
