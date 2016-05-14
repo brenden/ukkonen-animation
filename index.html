@@ -183,7 +183,6 @@
 
       .link {
         fill: none;
-        stroke: #797979;
         stroke-width: 2px;
       }
 
@@ -452,7 +451,14 @@
         .attr("x1", function(d) { return d.source.y; })
         .attr("y1", function(d) { return d.source.x; })
         .attr("x2", function(d) { return d.target.y; })
-        .attr("y2", function(d) { return d.target.x; });
+        .attr("y2", function(d) { return d.target.x; })
+        .style("stroke", function(d) {
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            return "#BE4FBA";
+          } else {
+            return "#797979";
+          }
+        });
 
       // Fade in link labels and transition them to their new positions
       link.transition()
