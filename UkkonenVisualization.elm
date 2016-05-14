@@ -158,9 +158,11 @@ update action model =
                 model
             else
                 let
-                    steps = Array.fromList (initialState :: UkkonenAlgorithm.steps string)
+                    terminatedString = string ++ "$"
+
+                    steps = Array.fromList (initialState :: UkkonenAlgorithm.steps terminatedString)
                 in
-                    { model | string = string, steps = steps, currentStep = 0 }
+                    { model | string = terminatedString, steps = steps, currentStep = 0, inputField = noContent }
 
         Back ->
             { model | currentStep = max (model.currentStep - 1) 0 }
@@ -225,7 +227,7 @@ view model =
                                         Nothing ->
                                             "none"
 
-                                remainderString = Basics.toString state.remainder
+                                remainderString = Basics.toString (state.remainder - 1)
                             in
                                 ul
                                     [ id "algorithm-state" ]
