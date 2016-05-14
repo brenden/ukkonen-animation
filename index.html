@@ -442,7 +442,12 @@
         .attr("y2", function(d) { return d.source.x; });
 
       // Update the link labels
-      linkEnter.append("text");
+      var linkText = linkEnter.append("text");
+
+      // Append tspans for displaying the active_length marker
+      for (var i=0; i<3; i++) {
+        linkText.append("tspan");
+      }
 
       // Transition links to their new position.
       link.transition()
@@ -479,15 +484,42 @@
         .attr("y", function(d) {
           return d.source.x + (d.target.x - d.source.x)/2 - 5;
         })
+
+      // Display the edge label and active_length marker
+      link.transition()
+        .select("text > tspan:first-child")
         .text(function(d) {
           var edgeLabel = d.source.edgeLabels[d.target.childNumber];
 
           if (d.target.childNumber == d.source.activeEdgeChild) {
             var edgeSteps = d.source.activeEdgeSteps;
-            return edgeLabel.slice(0, edgeSteps) + "|"
-              + edgeLabel.slice(edgeSteps);
+            return edgeLabel.slice(0, edgeSteps);
           } else {
             return edgeLabel;
+          }
+        });
+
+      link.transition()
+        .select("text > tspan:nth-child(2)")
+        .text(function(d) {
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            return "⚫"
+          } else {
+            return "";
+          }
+        })
+        .style("fill", "#C78D23");
+
+      link.transition()
+        .select("text > tspan:last-child")
+        .text(function(d) {
+          var edgeLabel = d.source.edgeLabels[d.target.childNumber];
+
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            var edgeSteps = d.source.activeEdgeSteps;
+            return edgeLabel.slice(edgeSteps);
+          } else {
+            return "";
           }
         });
 
