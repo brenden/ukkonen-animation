@@ -177,11 +177,11 @@ update action model =
 introText : Html
 introText =
     Markdown.toHtml """
-[Ukkonen's algorithm](#) is a method for constructing the [suffix tree](#) of a string in linear time. Suffix trees are useful because they can efficiently answer many questions about a string, such as how many times a given substring occurs within the string. Enter an input string below and you'll be able to watch step-by-step as Ukkonen's algorithm builds a suffix tree.
+[Ukkonen's algorithm](https://en.wikipedia.org/wiki/Ukkonen's_algorithm) is a method for constructing the [suffix tree](https://en.wikipedia.org/wiki/Suffix_tree) of a string in linear time. Suffix trees are useful because they can efficiently answer many questions about a string, such as how many times a given substring occurs within the string. Enter an input string below and you'll be able to watch step-by-step as Ukkonen's algorithm builds a suffix tree.
 
-I was inspired to build this visualization after reading [this great explanation](#) of Ukkonen's algorithm. I'd recommend reading that for an overview of how the algorithm works. Also helpful is the explanation given in [this paper](#).
+I was inspired to build this visualization after reading [this great explanation](http://stackoverflow.com/a/9513423) of Ukkonen's algorithm. I'd recommend reading that for an overview of how the algorithm works first and then playing around with this visualization. Also quite helpful is the explanation given in [this video](https://www.youtube.com/watch?v=aPRqocoBsFQ).
 
-This page was created using [Elm](#) and [d3](#).
+  This page was created using [Elm](http://elm-lang.org) and [d3](https://d3js.org/). Here's the [source code](https://github.com/brenden/ukkonen-animation).
 """
 
 
