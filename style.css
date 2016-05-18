@@ -171,38 +171,3 @@ button:hover {
 .remainder {
   background-color: #68DA93 !important;
 }
-
-/*
-* SVG styles
-*/
-.node {
-  cursor: pointer;
-}
-
-.node circle {
-  fill: #fff;
-  stroke-width: 3px;
-}
-
-.node text {
-  font: 12px sans-serif;
-}
-
-.link {
-  fill: none;
-  stroke-width: 2px;
-}
-
-.suffix-link {
-  fill: none;
-  stroke: #CCCCCC;
-  stroke-width: 2px;
-  stroke-dasharray: 1, 5;
-  stroke-linecap: round;
-  visibility: hidden;
-}
-
-.arrow-marker {
-  marker-end: url(#arrowMarker);
-  visibility: visible;
-}
