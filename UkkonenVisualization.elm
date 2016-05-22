@@ -119,12 +119,12 @@ stringUpdates =
 
 leftButton : Bool -> Html
 leftButton enabled =
-    Html.button [ onClick currentStepUpdates.address Back, disabled <| not enabled ] [ text "◄" ]
+    Html.button [ onClick currentStepUpdates.address Back, disabled <| not enabled ] [ text "< prev" ]
 
 
 rightButton : Bool -> Html
 rightButton enabled =
-    Html.button [ onClick currentStepUpdates.address Forward, disabled <| not enabled ] [ text "►" ]
+    Html.button [ onClick currentStepUpdates.address Forward, disabled <| not enabled ] [ text "next >" ]
 
 
 currentStepUpdates : Signal.Mailbox Action
