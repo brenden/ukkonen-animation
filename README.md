@@ -3,4 +3,4 @@ A step-by-step visualization of Ukkonen's algorithm for constructing suffix tree
 
 [http://brenden.github.io/ukkonen-animation](http://brenden.github.io/ukkonen-animation/)
 
-![Screenshot of visualization](http://brenden.github.io/ukkonen-animation/ukkonen-screenshot.png)
+<img src="http://brenden.github.io/ukkonen-animation/ukkonen-vis.png" width="646" />
