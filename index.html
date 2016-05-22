@@ -56,9 +56,8 @@
     var treeGraph = document.getElementById('tree-graph');
 
     // Set up d3 tree visualization
-    var margin = {top: 20, right: 20, bottom: 10, left: 20};
-    var width = 960 - margin.right - margin.left;
-    var height = 700 - margin.top - margin.bottom;
+    var width = 760;
+    var height = 600;
     var duration = 750;
     var tree = d3.layout.tree()
       .size([height, width])
@@ -72,10 +71,10 @@
     });
 
     var svg = d3.select("#steps-wrapper").append("svg")
-      .attr("width", width + margin.right + margin.left)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", width)
+      .attr("height", height)
       .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      .attr("transform", "translate(20,0)");
 
     var suffixLinkGroup = svg.append("g")
       .attr("class", "suffix-link-group");
@@ -342,7 +341,7 @@
         .select("text > tspan:nth-child(2)")
         .text(function(d) {
           if (d.target.childNumber == d.source.activeEdgeChild) {
-            return "⚫"
+            return "|"
           } else {
             return "";
           }
