@@ -147,6 +147,7 @@ button:hover {
 #letter-blocks {
   margin: 20px 0 0 20px;
   display: inline-block;
+  float: left;
 }
 
 #letter-blocks div {
