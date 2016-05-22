@@ -11917,12 +11917,12 @@ Elm.UkkonenVisualization.make = function (_elm) {
    var leftButton = function (enabled) {
       return A2($Html.button,
       _U.list([A2($Html$Events.onClick,currentStepUpdates.address,Back),$Html$Attributes.disabled($Basics.not(enabled))]),
-      _U.list([$Html.text("◄")]));
+      _U.list([$Html.text("< prev")]));
    };
    var rightButton = function (enabled) {
       return A2($Html.button,
       _U.list([A2($Html$Events.onClick,currentStepUpdates.address,Forward),$Html$Attributes.disabled($Basics.not(enabled))]),
-      _U.list([$Html.text("►")]));
+      _U.list([$Html.text("next >")]));
    };
    var actions = $Signal.mergeMany(_U.list([stringUpdates,currentStepUpdates.signal,inputFieldUpdates]));
    var model = A3($Signal.foldp,update,initialModel,actions);
