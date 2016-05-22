@@ -20,6 +20,7 @@ a:hover {
 
 p {
   line-height: 20px;
+  font-size: .9em;
 }
 
 button {
@@ -54,7 +55,7 @@ svg {
 
 #heading {
   background-color: #F9F9F9;
-  padding: 20px;
+  padding: 10px 0 10px 20px;
   border-bottom: 1px solid #999999;
 }
 
@@ -65,7 +66,7 @@ svg {
 }
 
 #heading p {
-  width: 760px;
+  width: 770px;
 }
 
 #navigation {
