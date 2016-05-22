@@ -107,12 +107,10 @@ insert' newChar state =
                                     [ newState ]
                             else
                                 let
-                                    newActivePoint = followSuffixLink activePoint state tree
-
                                     newState =
                                         { state
                                             | tree = newTree2
-                                            , activePoint = newActivePoint
+                                            , activePoint = nextActivePoint state tree
                                             , remainder = state.remainder - 1
                                         }
                                 in
@@ -127,13 +125,13 @@ insert' newChar state =
                             -- location points to.
                             currentStringIndex = activeEdge.labelStart + edgeSteps
 
-                            -- The character that the current edge location represents
-                            c = getChar currentStringIndex string
+                            -- The character that the current active point represents
+                            activePointChar = getChar currentStringIndex string
                         in
                             -- If the new suffix is already implicitly present in the
                             -- tree, then step forward on the active edge and increment
                             -- the remainder.
-                            if newChar == c then
+                            if newChar == activePointChar then
                                 [ normalizeActivePoint
                                     { state
                                         | activePoint = { activePoint | edge = Just ( edgeChar, edgeSteps + 1 ) }
@@ -145,10 +143,13 @@ insert' newChar state =
                             else
                                 -- Split the active edge
                                 let
+                                    -- Add one of the new nodes
                                     ( newTree1, newNodeId1 ) = addNode tree
 
+                                    -- Add the other one
                                     ( newTree2, newNodeId2 ) = addNode newTree1
 
+                                    -- Edge formed by the newly inserted character
                                     newTree3 =
                                         setEdge
                                             newNodeId1
@@ -158,11 +159,12 @@ insert' newChar state =
                                             EndOfString
                                             newTree2
 
+                                    -- Edge formed by the original characters that follow the active point
                                     newTree4 =
                                         setEdge
                                             newNodeId1
                                             activeEdge.pointingTo
-                                            c
+                                            activePointChar
                                             currentStringIndex
                                             activeEdge.labelEnd
                                             newTree3
@@ -177,6 +179,7 @@ insert' newChar state =
                                             (Definite currentStringIndex)
                                             newTree4
 
+                                    -- Add a suffix link if we've already split a node during the current insertion
                                     newTree6 =
                                         case lastSplitNode of
                                             Just nodeId ->
@@ -201,7 +204,7 @@ insert' newChar state =
                                                         )
                                             }
                                         else
-                                            followSuffixLink activePoint state tree
+                                            nextActivePoint state tree
 
                                     -- Update the state
                                     newState =
@@ -216,32 +219,20 @@ insert' newChar state =
                                     -- Recurse to insert the next remaining suffix
                                     newState :: (insert' newChar newState)
 
-                    -- Insert the new activeEdge if it doesn't exist yet
                     Nothing ->
-                        let
-                            ( treeWithNextSuffixNode, nextSuffixNode ) = addNode tree
-
-                            newActivePoint = { activePoint | edge = Nothing }
-                        in
-                            [ { state
-                                | tree =
-                                    setEdge
-                                        activePoint.nodeId
-                                        nextSuffixNode
-                                        newChar
-                                        i
-                                        EndOfString
-                                        treeWithNextSuffixNode
-                                , activePoint = newActivePoint
-                                , lastSplitNode = Nothing
-                                , charsAdded = charsAdded + 1
-                              }
-                            ]
+                        Debug.crash "active_edge is set to a nonexistent edge."
 
 
-followSuffixLink : ActivePoint -> UkkonenState -> UkkonenTree -> ActivePoint
-followSuffixLink activePoint state tree =
+{-| Update the active point to reflect the next suffix to be inserted. If a
+    suffix link exists at the current node, just follow that. Otherwise go
+    back to the root node and set active length to be the length of the next
+    suffix.
+-}
+nextActivePoint : UkkonenState -> UkkonenTree -> ActivePoint
+nextActivePoint state tree =
     let
+        activePoint = state.activePoint
+
         activeNode = getNode activePoint.nodeId tree
     in
         case activeNode.suffixLink of
@@ -266,7 +257,12 @@ followSuffixLink activePoint state tree =
                         }
 
 
-{-|
+{-| In some cases the active length could be greater than the length of the
+    active edge. In this situation, we normalize the active point by moving
+    the active node to the node pointed to by the active edge, and then
+    decrementing the active length by the length of the active edge. We repeat
+    this process until the active length is lower than the length of the
+    active edge.
 -}
 normalizeActivePoint : UkkonenState -> UkkonenState
 normalizeActivePoint state =
