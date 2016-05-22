@@ -1,0 +1,188 @@
+Elm.UkkonenAlgorithm = Elm.UkkonenAlgorithm || {};
+Elm.UkkonenAlgorithm.make = function (_elm) {
+   "use strict";
+   _elm.UkkonenAlgorithm = _elm.UkkonenAlgorithm || {};
+   if (_elm.UkkonenAlgorithm.values) return _elm.UkkonenAlgorithm.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $UkkonenTree = Elm.UkkonenTree.make(_elm);
+   var _op = {};
+   var getChar = F2(function (i,str) {
+      var _p0 = A2($Array.get,i,str);
+      if (_p0.ctor === "Just") {
+            return _p0._0;
+         } else {
+            return _U.crashCase("UkkonenAlgorithm",{start: {line: 340,column: 5},end: {line: 349,column: 41}},_p0)(A2($Basics._op["++"],
+            "Tried to look up index ",
+            A2($Basics._op["++"],$Basics.toString(i),A2($Basics._op["++"],", which is outside the bounds of ",$Basics.toString(str)))));
+         }
+   });
+   var normalizeActivePoint = function (state) {
+      normalizeActivePoint: while (true) {
+         var activePoint = state.activePoint;
+         var _p2 = activePoint.edge;
+         if (_p2.ctor === "Nothing") {
+               return state;
+            } else {
+               var _p6 = _p2._0._1;
+               if (_U.eq(_p6,0)) return _U.update(state,{activePoint: _U.update(activePoint,{edge: $Maybe.Nothing})}); else {
+                     var _p3 = A3($UkkonenTree.getEdge,state.activePoint.nodeId,_p2._0._0,state.tree);
+                     if (_p3.ctor === "Just") {
+                           var _p5 = _p3._0;
+                           var stringLen = $Array.length(state.string);
+                           var activeEdgeLength = function () {
+                              var _p4 = _p5.labelEnd;
+                              if (_p4.ctor === "EndOfString") {
+                                    return stringLen - _p5.labelStart;
+                                 } else {
+                                    return _p4._0 - _p5.labelStart;
+                                 }
+                           }();
+                           if (_U.cmp(_p6,activeEdgeLength) < 0) return state; else {
+                                 var _v4 = _U.update(state,
+                                 {activePoint: _U.update(activePoint,
+                                 {nodeId: _p5.pointingTo
+                                 ,edge: $Maybe.Just({ctor: "_Tuple2"
+                                                    ,_0: A2(getChar,stringLen - state.remainder + 1,state.string)
+                                                    ,_1: _p6 - activeEdgeLength})})});
+                                 state = _v4;
+                                 continue normalizeActivePoint;
+                              }
+                        } else {
+                           return state;
+                        }
+                  }
+            }
+      }
+   };
+   var nextActivePoint = F2(function (state,tree) {
+      var activePoint = state.activePoint;
+      var activeNode = A2($UkkonenTree.getNode,activePoint.nodeId,tree);
+      var _p7 = activeNode.suffixLink;
+      if (_p7.ctor === "Just") {
+            return _U.update(activePoint,{nodeId: _p7._0});
+         } else {
+            var _p8 = activePoint.edge;
+            if (_p8.ctor === "Nothing") {
+                  return _U.update(activePoint,{nodeId: 0});
+               } else {
+                  return _U.update(activePoint,
+                  {nodeId: 0
+                  ,edge: $Maybe.Just({ctor: "_Tuple2"
+                                     ,_0: A2(getChar,$Array.length(state.string) - state.remainder + 1,state.string)
+                                     ,_1: state.remainder - 2})});
+               }
+         }
+   });
+   var insert$ = F2(function (newChar,state) {
+      var _p9 = normalizeActivePoint(state);
+      var tree = _p9.tree;
+      var remainder = _p9.remainder;
+      var activePoint = _p9.activePoint;
+      var string = _p9.string;
+      var lastSplitNode = _p9.lastSplitNode;
+      var charsAdded = _p9.charsAdded;
+      var i = $Array.length(string) - 1;
+      var _p10 = activePoint.edge;
+      if (_p10.ctor === "Nothing") {
+            var _p11 = A3($UkkonenTree.getEdge,activePoint.nodeId,newChar,tree);
+            if (_p11.ctor === "Just") {
+                  var newActivePoint = _U.update(activePoint,{edge: $Maybe.Just({ctor: "_Tuple2",_0: newChar,_1: 1})});
+                  return _U.list([normalizeActivePoint(_U.update(state,
+                  {activePoint: newActivePoint,remainder: state.remainder + 1,lastSplitNode: $Maybe.Nothing,charsAdded: charsAdded + 1}))]);
+               } else {
+                  var _p12 = $UkkonenTree.addNode(tree);
+                  var newTree = _p12._0;
+                  var newId = _p12._1;
+                  var newTree2 = A6($UkkonenTree.setEdge,activePoint.nodeId,newId,newChar,i,$UkkonenTree.EndOfString,newTree);
+                  if (_U.eq(state.remainder,1)) {
+                        var newState = _U.update(state,{tree: newTree2,lastSplitNode: $Maybe.Nothing,charsAdded: charsAdded + 1});
+                        return _U.list([newState]);
+                     } else {
+                        var newState = _U.update(state,{tree: newTree2,activePoint: A2(nextActivePoint,state,tree),remainder: state.remainder - 1});
+                        return A2($List._op["::"],newState,A2(insert$,newChar,newState));
+                     }
+               }
+         } else {
+            var _p20 = _p10._0._1;
+            var _p19 = _p10._0._0;
+            var _p13 = A3($UkkonenTree.getEdge,activePoint.nodeId,_p19,tree);
+            if (_p13.ctor === "Just") {
+                  var _p17 = _p13._0;
+                  var currentStringIndex = _p17.labelStart + _p20;
+                  var activePointChar = A2(getChar,currentStringIndex,string);
+                  if (_U.eq(newChar,activePointChar)) return _U.list([normalizeActivePoint(_U.update(state,
+                     {activePoint: _U.update(activePoint,{edge: $Maybe.Just({ctor: "_Tuple2",_0: _p19,_1: _p20 + 1})})
+                     ,remainder: state.remainder + 1
+                     ,charsAdded: charsAdded + 1
+                     ,lastSplitNode: $Maybe.Nothing}))]); else {
+                        var newActivePoint = _U.eq(activePoint.nodeId,0) ? _U.update(activePoint,
+                        {edge: $Maybe.Just({ctor: "_Tuple2",_0: A2(getChar,i - state.remainder + 2,string),_1: _p20 - 1})}) : A2(nextActivePoint,state,tree);
+                        var _p14 = $UkkonenTree.addNode(tree);
+                        var newTree1 = _p14._0;
+                        var newNodeId1 = _p14._1;
+                        var _p15 = $UkkonenTree.addNode(newTree1);
+                        var newTree2 = _p15._0;
+                        var newNodeId2 = _p15._1;
+                        var newTree3 = A6($UkkonenTree.setEdge,newNodeId1,newNodeId2,newChar,i,$UkkonenTree.EndOfString,newTree2);
+                        var newTree4 = A6($UkkonenTree.setEdge,newNodeId1,_p17.pointingTo,activePointChar,currentStringIndex,_p17.labelEnd,newTree3);
+                        var newTree5 = A6($UkkonenTree.setEdge,
+                        activePoint.nodeId,
+                        newNodeId1,
+                        _p19,
+                        _p17.labelStart,
+                        $UkkonenTree.Definite(currentStringIndex),
+                        newTree4);
+                        var newTree6 = function () {
+                           var _p16 = lastSplitNode;
+                           if (_p16.ctor === "Just") {
+                                 return A3($UkkonenTree.setSuffixLink,_p16._0,newNodeId1,newTree5);
+                              } else {
+                                 return newTree5;
+                              }
+                        }();
+                        var newState = normalizeActivePoint(_U.update(state,
+                        {tree: newTree6,activePoint: newActivePoint,remainder: state.remainder - 1,lastSplitNode: $Maybe.Just(newNodeId1)}));
+                        return A2($List._op["::"],newState,A2(insert$,newChar,newState));
+                     }
+               } else {
+                  return _U.crashCase("UkkonenAlgorithm",
+                  {start: {line: 121,column: 17},end: {line: 223,column: 80}},
+                  _p13)("active_edge is set to a nonexistent edge.");
+               }
+         }
+   });
+   var insert = F2(function (newChar,initState) {
+      var state = _U.update(initState,{string: A2($Array.push,newChar,initState.string)});
+      return A2(insert$,newChar,state);
+   });
+   var initialState = {tree: $UkkonenTree.emptyTree
+                      ,remainder: 1
+                      ,activePoint: {nodeId: 0,edge: $Maybe.Nothing}
+                      ,string: $Array.empty
+                      ,lastSplitNode: $Maybe.Nothing
+                      ,charsAdded: 0};
+   var steps = function (string) {
+      return $List.reverse(A3($List.foldl,
+      F2(function (c,stepList) {
+         var _p21 = $List.head(stepList);
+         if (_p21.ctor === "Just") {
+               return A2($List.append,$List.reverse(A2(insert,c,_p21._0)),stepList);
+            } else {
+               return A2(insert,c,initialState);
+            }
+      }),
+      _U.list([]),
+      $String.toList(string)));
+   };
+   var UkkonenState = F6(function (a,b,c,d,e,f) {    return {tree: a,remainder: b,activePoint: c,string: d,lastSplitNode: e,charsAdded: f};});
+   var ActivePoint = F2(function (a,b) {    return {nodeId: a,edge: b};});
+   return _elm.UkkonenAlgorithm.values = {_op: _op,steps: steps,initialState: initialState,UkkonenState: UkkonenState,ActivePoint: ActivePoint};
+};

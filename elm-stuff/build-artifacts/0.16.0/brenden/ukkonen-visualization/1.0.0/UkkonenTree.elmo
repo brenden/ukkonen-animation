@@ -1,0 +1,92 @@
+Elm.UkkonenTree = Elm.UkkonenTree || {};
+Elm.UkkonenTree.make = function (_elm) {
+   "use strict";
+   _elm.UkkonenTree = _elm.UkkonenTree || {};
+   if (_elm.UkkonenTree.values) return _elm.UkkonenTree.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $IntDict = Elm.IntDict.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var newLine = "\n";
+   var addNode = function (tree) {
+      var newNode = {edges: $Dict.empty,suffixLink: $Maybe.Nothing};
+      var count = $IntDict.size(tree);
+      var newTree = A3($IntDict.insert,count,newNode,tree);
+      return {ctor: "_Tuple2",_0: newTree,_1: count};
+   };
+   var getNode = F2(function (nodeId,tree) {
+      var _p0 = A2($IntDict.get,nodeId,tree);
+      if (_p0.ctor === "Just") {
+            return _p0._0;
+         } else {
+            return _U.crashCase("UkkonenTree",{start: {line: 82,column: 5},end: {line: 87,column: 70}},_p0)("Tried to reference a node that does\'t exist");
+         }
+   });
+   var setSuffixLink = F3(function (fromId,toId,tree) {
+      var node = A2(getNode,fromId,tree);
+      return A3($IntDict.insert,fromId,_U.update(node,{suffixLink: $Maybe.Just(toId)}),tree);
+   });
+   var toString$ = F3(function (level,rootId,tree) {
+      var spaces = A2($String.repeat,level,"  ");
+      var root = A2(getNode,rootId,tree);
+      return A2($Basics._op["++"],
+      spaces,
+      A2($Basics._op["++"],
+      $Basics.toString(rootId),
+      A2($Basics._op["++"],
+      newLine,
+      $String.concat($Dict.values(A2($Dict.map,
+      F2(function (edgeLabel,edge) {
+         return A2($Basics._op["++"],
+         spaces,
+         A2($Basics._op["++"],
+         $Basics.toString(edgeLabel),
+         A2($Basics._op["++"],"->",A2($Basics._op["++"],newLine,A3(toString$,level + 1,edge.pointingTo,tree)))));
+      }),
+      root.edges))))));
+   });
+   var toString = A2(toString$,0,0);
+   var setEdge = F6(function (fromId,toId,$char,labelStart,labelEnd,tree) {
+      var newEdge = {pointingTo: toId,labelStart: labelStart,labelEnd: labelEnd};
+      var node = A2(getNode,fromId,tree);
+      var newEdges = A3($Dict.insert,$char,newEdge,node.edges);
+      var newNode = _U.update(node,{edges: newEdges});
+      return A3($IntDict.insert,fromId,newNode,tree);
+   });
+   var getEdge = F3(function (nodeId,$char,tree) {
+      var _p2 = A2($IntDict.get,nodeId,tree);
+      if (_p2.ctor === "Just") {
+            return A2($Dict.get,$char,_p2._0.edges);
+         } else {
+            return _U.crashCase("UkkonenTree",
+            {start: {line: 50,column: 5},end: {line: 55,column: 75}},
+            _p2)("Active point is set to a node that doesn\'t exist");
+         }
+   });
+   var emptyTree = function () {    var newNode = {edges: $Dict.empty,suffixLink: $Maybe.Nothing};return A3($IntDict.insert,0,newNode,$IntDict.empty);}();
+   var EndOfString = {ctor: "EndOfString"};
+   var Definite = function (a) {    return {ctor: "Definite",_0: a};};
+   var UkkonenEdge = F3(function (a,b,c) {    return {pointingTo: a,labelStart: b,labelEnd: c};});
+   var UkkonenNode = F2(function (a,b) {    return {edges: a,suffixLink: b};});
+   return _elm.UkkonenTree.values = {_op: _op
+                                    ,UkkonenNode: UkkonenNode
+                                    ,UkkonenEdge: UkkonenEdge
+                                    ,Definite: Definite
+                                    ,EndOfString: EndOfString
+                                    ,emptyTree: emptyTree
+                                    ,getEdge: getEdge
+                                    ,setEdge: setEdge
+                                    ,getNode: getNode
+                                    ,addNode: addNode
+                                    ,setSuffixLink: setSuffixLink
+                                    ,toString: toString
+                                    ,toString$: toString$
+                                    ,newLine: newLine};
+};

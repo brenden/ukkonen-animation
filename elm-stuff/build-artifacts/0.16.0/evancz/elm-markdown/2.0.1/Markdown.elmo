@@ -1,0 +1,30 @@
+Elm.Markdown = Elm.Markdown || {};
+Elm.Markdown.make = function (_elm) {
+   "use strict";
+   _elm.Markdown = _elm.Markdown || {};
+   if (_elm.Markdown.values) return _elm.Markdown.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Markdown = Elm.Native.Markdown.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var toElementWith = $Native$Markdown.toElementWith;
+   var toHtmlWith = $Native$Markdown.toHtmlWith;
+   var defaultOptions = {githubFlavored: $Maybe.Just({tables: false,breaks: false}),defaultHighlighting: $Maybe.Nothing,sanitize: false,smartypants: false};
+   var Options = F4(function (a,b,c,d) {    return {githubFlavored: a,defaultHighlighting: b,sanitize: c,smartypants: d};});
+   var toElement = function (string) {    return A2($Native$Markdown.toElementWith,defaultOptions,string);};
+   var toHtml = function (string) {    return A2($Native$Markdown.toHtmlWith,defaultOptions,string);};
+   return _elm.Markdown.values = {_op: _op
+                                 ,toHtml: toHtml
+                                 ,toElement: toElement
+                                 ,Options: Options
+                                 ,defaultOptions: defaultOptions
+                                 ,toHtmlWith: toHtmlWith
+                                 ,toElementWith: toElementWith};
+};

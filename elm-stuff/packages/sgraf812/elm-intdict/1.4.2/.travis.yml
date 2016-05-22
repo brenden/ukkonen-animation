@@ -1,0 +1,11 @@
+language: haskell
+install:
+  - cd tests/
+  - nvm install 0.12
+  - npm install -g elm
+  - npm install -g elm-test
+  - elm-package install -y
+before_script:
+  - elm-make --yes --output raw-test.js ConsoleRunner.elm
+  - bash elm-stuff/packages/laszlopandy/elm-console/1.0.3/elm-io.sh raw-test.js test.js
+script: node test.js

@@ -1,0 +1,387 @@
+<html>
+  <head>
+    <meta charset=utf-8 />
+    <title>Visualization of Ukkonen's Algorithm</title>
+    <script src="elm.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+      /*
+      * SVG styles
+      */
+      .node circle {
+        fill: #fff;
+        stroke-width: 2px;
+      }
+
+      .node text {
+        font: 12px sans-serif;
+      }
+
+      .link {
+        fill: none;
+        stroke-width: 2px;
+      }
+
+      .suffix-link {
+        fill: none;
+        stroke: #CCCCCC;
+        stroke-width: 2px;
+        stroke-dasharray: 1, 5;
+        stroke-linecap: round;
+        visibility: hidden;
+      }
+
+      .arrow-marker {
+        marker-end: url(#arrowMarker);
+        visibility: visible;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Github corner ribbon -->
+    <a href="https://github.com/brenden/ukkonen-animation"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+
+    <div id="tree-graph"></div>
+    <div id="ukkonen-visualization"></div>
+  </body>
+
+  <script src="lib/d3.v3.min.js"></script>
+
+  <script type="text/javascript">
+
+    // Embed elm code in page
+    var div = document.getElementById('ukkonen-visualization');
+    var ukkonenVisualization = Elm.embed(Elm.UkkonenVisualization, div);
+    var treeGraph = document.getElementById('tree-graph');
+
+    // Set up d3 tree visualization
+    var margin = {top: 20, right: 20, bottom: 10, left: 20};
+    var width = 960 - margin.right - margin.left;
+    var height = 700 - margin.top - margin.bottom;
+    var duration = 750;
+    var tree = d3.layout.tree()
+      .size([height, width])
+      .separation(function() { return 2; });
+    var root;
+    var i = 0;
+    var treeNodes = {};
+
+    var diagonal = d3.svg.diagonal().projection(function(d) {
+      return [d.y, d.x];
+    });
+
+    var svg = d3.select("#steps-wrapper").append("svg")
+      .attr("width", width + margin.right + margin.left)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var suffixLinkGroup = svg.append("g")
+      .attr("class", "suffix-link-group");
+
+    var linkGroup = svg.append("g")
+      .attr("class", "link-group");
+
+    var nodeGroup = svg.append("g")
+      .attr("class", "node-group");
+
+    svg.append('defs')
+      .append('marker')
+      .attr('id', 'arrowMarker')
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 24)
+      .attr("refY", -1)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr('style', 'fill: #797979;');
+
+    // Subscribe to changes to the tree from elm, and update D3 when the tree
+    // data changes
+    ukkonenVisualization.ports.tree.subscribe(function(x) {
+      root = formatD3Tree(x, null);
+      d3.select("#side-box").style({display: "block"});
+
+      if (root.children.length == 0) {
+        suffixLinkGroup.selectAll("*").remove();
+        linkGroup.selectAll("*").remove();
+      }
+
+      root.x = height / 2;
+      root.y = 0;
+      updateD3Tree();
+      d3.select(self.frameElement).style("height", "500px");
+    });
+
+
+    /*
+     * Converts the tree object returned by the elm code to the format
+     * expected by D3
+     *
+     * @param (Object) tree
+     * @param (Object) parent
+     * @param (Int) childNumber
+     * @return (Object)
+     */
+    function formatD3Tree(tree, parent, childNumber) {
+      var treeChildrenKeys = Object.keys(tree.children);
+      var activeEdgeChild = null;
+      var activeEdgeSteps = null;
+
+      treeChildrenKeys.forEach(function(k, i) {
+        if (tree.children[k].edgeSteps) {
+          activeEdgeChild = i;
+          activeEdgeSteps = tree.children[k].edgeSteps;
+        }
+      });
+
+      return {
+        id: tree.id,
+        parent: parent,
+        childNumber: childNumber,
+        isActivePoint: tree.isActivePoint,
+        children: treeChildrenKeys.map(function(k, i) {
+          return formatD3Tree(tree.children[k].pointingTo, tree, i);
+        }),
+        edgeLabels: treeChildrenKeys.map(function(k) {
+          return tree.children[k].label;
+        }),
+        activeEdgeChild: activeEdgeChild,
+        activeEdgeSteps: activeEdgeSteps,
+        suffixLink: tree.suffixLink
+      };
+    }
+
+
+    /*
+     * Transitions the D3 tree diagram from its previous state to the new one
+     */
+    function updateD3Tree() {
+
+      // Compute the new tree layout.
+      var nodes = tree.nodes(root).reverse(),
+        links = tree.links(nodes);
+
+      // Normalize for fixed-depth.
+      nodes.forEach(function(d) {
+        d.y = d.depth * 180;
+        treeNodes[d.id] = d;
+      });
+
+
+      /**
+       * Update the nodes
+       */
+      var node = nodeGroup.selectAll("g.node")
+        .data(nodes, function(d) { return d.id; });
+
+      // Enter any new nodes at the parent's previous position.
+      var nodeEnter = node.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function(d) {
+          return "translate("
+            + (d.parent || root).y + "," + (d.parent || root).x + ")";
+        });
+
+      nodeEnter.append("circle")
+        .attr("r", 1e-6)
+
+      nodeEnter.append("text")
+        .attr("transform", "translate(0, 4)")
+        .attr("opacity", 0.7)
+        .style("text-anchor", "middle")
+        .text(function(d) { return d.id });
+
+      var nodeUpdate = node.transition();
+
+      // Transition nodes to their new position
+      nodeUpdate.duration(duration)
+        .attr("transform", function(d) {
+          return "translate(" + d.y + "," + d.x + ")";
+        });
+
+      nodeUpdate.select("circle")
+        .attr("r", 15)
+        .style("fill", function(d) {
+          return d.isActivePoint ? 'tomato' : 'lightsteelblue';
+        })
+        .style("stroke", function(d) {
+          return d.isActivePoint ? '#B94935' : 'steelblue';
+        });
+
+
+      // Transition exiting nodes to the parent's new position.
+      var nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr("transform", function(d) {
+          return "translate("
+            + (d.parent || root).y + "," + (d.parent || root).x + ")";
+        })
+        .remove();
+
+      nodeExit.select("circle")
+        .attr("r", 1e-6);
+
+      nodeExit.select("text")
+        .style("fill-opacity", 1e-6);
+
+
+      /**
+       * Update the suffix links
+       */
+      var suffixLink = suffixLinkGroup.selectAll("path.suffix-link")
+        .data(nodes, function(d) { return d.id; });
+
+      var suffixLinkEnter = suffixLink.enter().append("path")
+        .attr('class', 'suffix-link');
+
+      suffixLink.transition().duration(duration)
+        .attr('d', function(d) {
+          var target = treeNodes[d.suffixLink];
+
+          if (target) {
+            var dx = target.x - d.x;
+            var dy = target.y - d.y;
+            var dr = Math.sqrt(dx * dx + dy * dy);
+
+            return "M" + d.y + " " + d.x +
+                   "A" + dr + " " + dr + " 0 0 1 " +
+                     target.y + " " + target.x;
+          } else {
+            return "M" + d.y + " " + d.x;
+          }
+        });
+
+      suffixLink.transition().delay(duration)
+        .attr('class', function(d) {
+          return treeNodes[d.suffixLink]
+            ? 'suffix-link arrow-marker'
+            : 'suffix-link';
+        });
+
+
+      /**
+       * Update the links
+       */
+      var link = linkGroup.selectAll("g.ll")
+        .data(links, function(d) { return d.target.id; });
+
+      // Enter any new links at the parent's previous position.
+      var linkEnter = link.enter().append("g")
+        .attr("class", "ll");
+
+      linkEnter.append("line")
+        .attr("class", "link")
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.source.y; })
+        .attr("y2", function(d) { return d.source.x; });
+
+      // Update the link labels
+      var linkText = linkEnter.append("text");
+
+      // Append tspans for displaying the active_length marker
+      for (var i=0; i<3; i++) {
+        linkText.append("tspan");
+      }
+
+      // Transition links to their new position.
+      link.transition()
+        .select(".link")
+        .duration(duration)
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.target.y; })
+        .attr("y2", function(d) { return d.target.x; })
+        .style("stroke", function(d) {
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            return "#BE4FBA";
+          } else {
+            return "#797979";
+          }
+        });
+
+      // Fade in link labels and transition them to their new positions
+      link.transition()
+        .select("text")
+        .duration(duration)
+        .style("fill-opacity", 1)
+        .style("text-anchor", "middle")
+        .attr("transform", function(d) {
+          var rot = 180 * (Math.atan((d.target.x - d.source.x) /
+                                     (d.target.y - d.source.y)) / Math.PI);
+          var x = d.source.y + (d.target.y - d.source.y)/2;
+          var y = d.source.x + (d.target.x - d.source.x)/2 - 5;
+          return "rotate(" + rot + "," + x + "," + y + ")";
+        })
+        .attr("x", function(d) {
+          return d.source.y + (d.target.y - d.source.y)/2;
+        })
+        .attr("y", function(d) {
+          return d.source.x + (d.target.x - d.source.x)/2 - 5;
+        })
+
+      // Display the edge label and active_length marker
+      link.transition()
+        .select("text > tspan:first-child")
+        .text(function(d) {
+          var edgeLabel = d.source.edgeLabels[d.target.childNumber];
+
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            var edgeSteps = d.source.activeEdgeSteps;
+            return edgeLabel.slice(0, edgeSteps);
+          } else {
+            return edgeLabel;
+          }
+        });
+
+      link.transition()
+        .select("text > tspan:nth-child(2)")
+        .text(function(d) {
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            return "⚫"
+          } else {
+            return "";
+          }
+        })
+        .style("fill", "#C78D23");
+
+      link.transition()
+        .select("text > tspan:last-child")
+        .text(function(d) {
+          var edgeLabel = d.source.edgeLabels[d.target.childNumber];
+
+          if (d.target.childNumber == d.source.activeEdgeChild) {
+            var edgeSteps = d.source.activeEdgeSteps;
+            return edgeLabel.slice(edgeSteps);
+          } else {
+            return "";
+          }
+        });
+
+      // Transition exiting links to parent's new position
+      link.exit().transition()
+        .select(".link")
+        .duration(duration)
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.source.y; })
+        .attr("y2", function(d) { return d.source.x; });
+
+      // Fade out exiting link labels
+      link.exit().transition()
+        .select("text")
+        .duration(duration)
+        .style("fill-opacity", 1e-6)
+        .attr("x", function(d) {
+          return d.source.y;
+        })
+        .attr("y", function(d) {
+          return d.source.x;
+        });
+    }
+  </script>
+</html>

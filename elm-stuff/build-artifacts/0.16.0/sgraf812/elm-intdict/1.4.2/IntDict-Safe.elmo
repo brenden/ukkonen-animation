@@ -1,0 +1,31 @@
+Elm.IntDict = Elm.IntDict || {};
+Elm.IntDict.Safe = Elm.IntDict.Safe || {};
+Elm.IntDict.Safe.make = function (_elm) {
+   "use strict";
+   _elm.IntDict = _elm.IntDict || {};
+   _elm.IntDict.Safe = _elm.IntDict.Safe || {};
+   if (_elm.IntDict.Safe.values) return _elm.IntDict.Safe.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $IntDict = Elm.IntDict.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var InvalidKey = {ctor: "InvalidKey"};
+   var safeWrapper = F2(function (k,f) {    return $Basics.not($IntDict.isValidKey(k)) ? $Result.Err(InvalidKey) : $Result.Ok(f({ctor: "_Tuple0"}));});
+   var safeInsert = F3(function (k,v,dict) {    return A2(safeWrapper,k,function (_p0) {    var _p1 = _p0;return A3($IntDict.insert,k,v,dict);});});
+   var safeRemove = F2(function (k,dict) {    return A2(safeWrapper,k,function (_p2) {    var _p3 = _p2;return A2($IntDict.remove,k,dict);});});
+   var safeUpdate = F3(function (k,alter,dict) {    return A2(safeWrapper,k,function (_p4) {    var _p5 = _p4;return A3($IntDict.update,k,alter,dict);});});
+   var safeGet = F2(function (k,dict) {    return A2(safeWrapper,k,function (_p6) {    var _p7 = _p6;return A2($IntDict.get,k,dict);});});
+   var safeMember = F2(function (k,dict) {    return A2(safeWrapper,k,function (_p8) {    var _p9 = _p8;return A2($IntDict.member,k,dict);});});
+   return _elm.IntDict.Safe.values = {_op: _op
+                                     ,safeInsert: safeInsert
+                                     ,safeRemove: safeRemove
+                                     ,safeUpdate: safeUpdate
+                                     ,safeMember: safeMember
+                                     ,safeGet: safeGet
+                                     ,InvalidKey: InvalidKey};
+};

@@ -1,0 +1,286 @@
+Elm.UkkonenVisualization = Elm.UkkonenVisualization || {};
+Elm.UkkonenVisualization.make = function (_elm) {
+   "use strict";
+   _elm.UkkonenVisualization = _elm.UkkonenVisualization || {};
+   if (_elm.UkkonenVisualization.values) return _elm.UkkonenVisualization.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Color = Elm.Color.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $Graphics$Input = Elm.Graphics.Input.make(_elm),
+   $Graphics$Input$Field = Elm.Graphics.Input.Field.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Markdown = Elm.Markdown.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Text = Elm.Text.make(_elm),
+   $UkkonenAlgorithm = Elm.UkkonenAlgorithm.make(_elm),
+   $UkkonenTree = Elm.UkkonenTree.make(_elm);
+   var _op = {};
+   var treeJson$ = F4(function (rootId,tree,activePoint,string) {
+      var isActivePoint = _U.eq(activePoint.nodeId,rootId);
+      var root = A2($UkkonenTree.getNode,rootId,tree);
+      return $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "id",_1: $Json$Encode.$int(rootId)}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "suffixLink"
+                                          ,_1: function () {
+                                             var _p0 = root.suffixLink;
+                                             if (_p0.ctor === "Just") {
+                                                   return $Json$Encode.$int(_p0._0);
+                                                } else {
+                                                   return $Json$Encode.$null;
+                                                }
+                                          }()}
+                                         ,{ctor: "_Tuple2",_0: "isActivePoint",_1: $Json$Encode.bool(isActivePoint)}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "children"
+                                          ,_1: $Json$Encode.object(A2($List.map,
+                                          function (_p1) {
+                                             var _p2 = _p1;
+                                             var _p6 = _p2._1;
+                                             var _p5 = _p2._0;
+                                             var labelEnd = function () {
+                                                var _p3 = _p6.labelEnd;
+                                                if (_p3.ctor === "Definite") {
+                                                      return _p3._0;
+                                                   } else {
+                                                      return $String.length(string);
+                                                   }
+                                             }();
+                                             return {ctor: "_Tuple2"
+                                                    ,_0: $String.fromChar(_p5)
+                                                    ,_1: $Json$Encode.object(_U.list([{ctor: "_Tuple2"
+                                                                                      ,_0: "label"
+                                                                                      ,_1: $Json$Encode.string(A3($String.slice,
+                                                                                      _p6.labelStart,
+                                                                                      labelEnd,
+                                                                                      string))}
+                                                                                     ,{ctor: "_Tuple2"
+                                                                                      ,_0: "pointingTo"
+                                                                                      ,_1: A4(treeJson$,_p6.pointingTo,tree,activePoint,string)}
+                                                                                     ,{ctor: "_Tuple2"
+                                                                                      ,_0: "edgeSteps"
+                                                                                      ,_1: function () {
+                                                                                         var _p4 = activePoint.edge;
+                                                                                         if (_p4.ctor === "Just") {
+                                                                                               return isActivePoint && _U.eq(_p5,
+                                                                                               _p4._0._0) ? $Json$Encode.$int(_p4._0._1) : $Json$Encode.$null;
+                                                                                            } else {
+                                                                                               return $Json$Encode.$null;
+                                                                                            }
+                                                                                      }()}]))};
+                                          },
+                                          $Dict.toList(root.edges)))}]));
+   });
+   var treeJson = F3(function (tree,activePoint,string) {    return A4(treeJson$,0,tree,activePoint,string);});
+   var letterBlocks = F3(function (string,currentStep,steps) {
+      var _p7 = A2($Array.get,currentStep,steps);
+      if (_p7.ctor === "Just") {
+            var _p8 = _p7._0;
+            return A2($List.indexedMap,
+            F2(function (i,c) {
+               var charsAdded = _p8.charsAdded;
+               var added = _U.cmp(i,charsAdded) < 0 ? _U.list([$Html$Attributes.$class("added")]) : _U.list([]);
+               var remainder = _U.cmp(i,charsAdded - _p8.remainder) > 0 && _U.cmp(i,
+               charsAdded) < 0 ? _U.list([$Html$Attributes.$class("remainder")]) : _U.list([]);
+               return A2($Html.div,A2($List.append,added,remainder),_U.list([$Html.text($String.fromChar(c))]));
+            }),
+            $String.toList(string));
+         } else {
+            return _U.list([]);
+         }
+   });
+   var introText = $Markdown.toHtml("\n[Ukkonen\'s algorithm](https://en.wikipedia.org/wiki/Ukkonen\'s_algorithm) is a method of constructing the [suffix tree](https://en.wikipedia.org/wiki/Suffix_tree) of a string in linear time. Suffix trees are useful because they can efficiently answer many questions about a string, such as how many times a given substring occurs within the string. Enter an input string below and you\'ll be able to watch step-by-step as Ukkonen\'s algorithm builds a suffix tree.\n\nI was inspired to build this visualization after reading [this great explanation](http://stackoverflow.com/a/9513423) of Ukkonen\'s algorithm. I\'d recommend first reading that for an overview of how the algorithm works and then playing around with this visualization. Also quite helpful is the explanation given in [this video](https://www.youtube.com/watch?v=aPRqocoBsFQ).\n\nThis page was created using [Elm](http://elm-lang.org) and [d3](https://d3js.org/). Here\'s the [source code](https://github.com/brenden/ukkonen-animation).\n");
+   var update = F2(function (action,model) {
+      var _p9 = action;
+      switch (_p9.ctor)
+      {case "InputFieldUpdate": return _U.update(model,{inputField: _p9._0});
+         case "Build": var _p10 = _p9._0;
+           if (_U.eq(_p10,"")) return model; else {
+                 var terminatedString = A2($Basics._op["++"],_p10,"$");
+                 var steps = $Array.fromList(A2($List._op["::"],$UkkonenAlgorithm.initialState,$UkkonenAlgorithm.steps(terminatedString)));
+                 return _U.update(model,{string: terminatedString,steps: steps,currentStep: 0,inputField: $Graphics$Input$Field.noContent});
+              }
+         case "Back": return _U.update(model,{currentStep: A2($Basics.max,model.currentStep - 1,0)});
+         case "Forward": return _U.update(model,{currentStep: A2($Basics.min,model.currentStep + 1,$Array.length(model.steps) - 1)});
+         default: return model;}
+   });
+   var inputString = $Signal.mailbox($Graphics$Input$Field.noContent);
+   var initialModel = {string: "",steps: $Array.empty,currentStep: 0,inputField: $Graphics$Input$Field.noContent};
+   var Forward = {ctor: "Forward"};
+   var Back = {ctor: "Back"};
+   var Build = function (a) {    return {ctor: "Build",_0: a};};
+   var InputFieldUpdate = function (a) {    return {ctor: "InputFieldUpdate",_0: a};};
+   var inputFieldUpdates = A2($Signal.map,function (content) {    return InputFieldUpdate(content);},inputString.signal);
+   var NoOp = {ctor: "NoOp"};
+   var inputButton = $Signal.mailbox(NoOp);
+   var stringUpdates = A3($Signal.map2,
+   F2(function (_p11,inputContent) {    return Build(inputContent.string);}),
+   inputButton.signal,
+   A2($Signal.sampleOn,inputButton.signal,inputString.signal));
+   var visualizeButton = A2($Graphics$Input.button,A2($Signal.message,inputButton.address,NoOp),"build suffix tree");
+   var currentStepUpdates = $Signal.mailbox(NoOp);
+   var leftButton = function (enabled) {
+      return A2($Html.button,
+      _U.list([A2($Html$Events.onClick,currentStepUpdates.address,Back),$Html$Attributes.disabled($Basics.not(enabled))]),
+      _U.list([$Html.text("◀")]));
+   };
+   var rightButton = function (enabled) {
+      return A2($Html.button,
+      _U.list([A2($Html$Events.onClick,currentStepUpdates.address,Forward),$Html$Attributes.disabled($Basics.not(enabled))]),
+      _U.list([$Html.text("▶")]));
+   };
+   var actions = $Signal.mergeMany(_U.list([stringUpdates,currentStepUpdates.signal,inputFieldUpdates]));
+   var model = A3($Signal.foldp,update,initialModel,actions);
+   var Model = F4(function (a,b,c,d) {    return {string: a,steps: b,currentStep: c,inputField: d};});
+   var tree = Elm.Native.Port.make(_elm).outboundSignal("tree",
+   function (v) {
+      return v;
+   },
+   A2($Signal.map,
+   function (_p12) {
+      var _p13 = _p12;
+      var _p16 = _p13._0;
+      var _p14 = A2($Array.get,_p16,_p13._1);
+      if (_p14.ctor === "Just") {
+            var _p15 = _p14._0;
+            return A3(treeJson,_p15.tree,_p15.activePoint,A3($String.slice,0,_p16 + 1,$String.fromList($Array.toList(_p15.string))));
+         } else {
+            return $Json$Encode.$null;
+         }
+   },
+   $Signal.dropRepeats(A2($Signal.map,function (m) {    return {ctor: "_Tuple3",_0: m.currentStep,_1: m.steps,_2: m.string};},model))));
+   var lightGrayColor = A3($Color.rgb,68,68,68);
+   var inputFieldStyle = function () {
+      var textDefaultStyle = $Text.defaultStyle;
+      return _U.update($Graphics$Input$Field.defaultStyle,
+      {padding: $Graphics$Input$Field.uniformly(-6)
+      ,outline: {color: lightGrayColor,width: $Graphics$Input$Field.uniformly(1),radius: 4}
+      ,style: _U.update(textDefaultStyle,{height: $Maybe.Just(25),color: lightGrayColor})});
+   }();
+   var inputField = A3($Graphics$Input$Field.field,inputFieldStyle,$Signal.message(inputString.address),"input string...");
+   var view = function (model) {
+      var rightButtonEnabled = _U.cmp(model.currentStep,$Array.length(model.steps) - 1) < 0;
+      var leftButtonEnabled = _U.cmp(model.currentStep,0) > 0;
+      return A2($Html.div,
+      _U.list([$Html$Attributes.id("visualization")]),
+      _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.id("heading")]),
+              _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Visualization of Ukkonen\'s Algorithm")]))
+                      ,introText
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.id("input-string")]),
+                      _U.list([$Html.fromElement(A2($Graphics$Element.width,400,inputField(model.inputField)))
+                              ,A2($Html.span,
+                              _U.list([$Html$Attributes.id("input-button-wrapper")]),
+                              _U.list([$Html.fromElement(A2($Graphics$Element.width,150,visualizeButton))]))]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.id("steps-wrapper")]),
+              _U.list([A2($Html.div,
+                      _U.list([$Html$Attributes.id("side-box")]),
+                      _U.list([A2($Html.h2,
+                              _U.list([]),
+                              _U.list([$Html.text(A2($Basics._op["++"],
+                              "Step ",
+                              A2($Basics._op["++"],
+                              $Basics.toString(model.currentStep + 1),
+                              A2($Basics._op["++"]," of ",$Basics.toString($Array.length(model.steps))))))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.id("navigation")]),
+                              _U.list([A2($Html.span,_U.list([$Html$Attributes.id("left-button-wrapper")]),_U.list([leftButton(leftButtonEnabled)]))
+                                      ,A2($Html.span,_U.list([$Html$Attributes.id("right-button-wrapper")]),_U.list([rightButton(rightButtonEnabled)]))]))
+                              ,function () {
+                                 var _p17 = A2($Array.get,model.currentStep,model.steps);
+                                 if (_p17.ctor === "Just") {
+                                       var _p20 = _p17._0;
+                                       var remainderString = $Basics.toString(_p20.remainder - 1);
+                                       var activeLengthString = function () {
+                                          var _p18 = _p20.activePoint.edge;
+                                          if (_p18.ctor === "Just") {
+                                                return $Basics.toString(_p18._0._1);
+                                             } else {
+                                                return "0";
+                                             }
+                                       }();
+                                       var activeEdgeString = function () {
+                                          var _p19 = _p20.activePoint.edge;
+                                          if (_p19.ctor === "Just") {
+                                                return $String.fromChar(_p19._0._0);
+                                             } else {
+                                                return "none";
+                                             }
+                                       }();
+                                       var activeNodeString = $Basics.toString(_p20.activePoint.nodeId);
+                                       return A2($Html.ul,
+                                       _U.list([$Html$Attributes.id("algorithm-state")]),
+                                       _U.list([A2($Html.li,
+                                               _U.list([]),
+                                               _U.list([A2($Html.span,_U.list([]),_U.list([$Html.text("active_node:")]))
+                                                       ,A2($Html.span,
+                                                       _U.list([$Html$Attributes.id("var-active-node")]),
+                                                       _U.list([$Html.text(activeNodeString)]))]))
+                                               ,A2($Html.li,
+                                               _U.list([]),
+                                               _U.list([A2($Html.span,_U.list([]),_U.list([$Html.text("active_edge:")]))
+                                                       ,A2($Html.span,
+                                                       _U.list([$Html$Attributes.id("var-active-edge")]),
+                                                       _U.list([$Html.text(activeEdgeString)]))]))
+                                               ,A2($Html.li,
+                                               _U.list([]),
+                                               _U.list([A2($Html.span,_U.list([]),_U.list([$Html.text("active_length:")]))
+                                                       ,A2($Html.span,
+                                                       _U.list([$Html$Attributes.id("var-active-length")]),
+                                                       _U.list([$Html.text(activeLengthString)]))]))
+                                               ,A2($Html.li,
+                                               _U.list([]),
+                                               _U.list([A2($Html.span,_U.list([]),_U.list([$Html.text("remainder:")]))
+                                                       ,A2($Html.span,
+                                                       _U.list([$Html$Attributes.id("var-remainder")]),
+                                                       _U.list([$Html.text(remainderString)]))]))]));
+                                    } else {
+                                       return $Html.text("");
+                                    }
+                              }()]))
+                      ,A2($Html.div,_U.list([$Html$Attributes.id("letter-blocks")]),A3(letterBlocks,model.string,model.currentStep,model.steps))]))]));
+   };
+   var main = A2($Signal.map,view,model);
+   var baseColor = A3($Color.rgb,57,75,169);
+   return _elm.UkkonenVisualization.values = {_op: _op
+                                             ,baseColor: baseColor
+                                             ,lightGrayColor: lightGrayColor
+                                             ,Model: Model
+                                             ,NoOp: NoOp
+                                             ,InputFieldUpdate: InputFieldUpdate
+                                             ,Build: Build
+                                             ,Back: Back
+                                             ,Forward: Forward
+                                             ,initialModel: initialModel
+                                             ,inputString: inputString
+                                             ,inputButton: inputButton
+                                             ,inputFieldStyle: inputFieldStyle
+                                             ,inputField: inputField
+                                             ,inputFieldUpdates: inputFieldUpdates
+                                             ,visualizeButton: visualizeButton
+                                             ,stringUpdates: stringUpdates
+                                             ,leftButton: leftButton
+                                             ,rightButton: rightButton
+                                             ,currentStepUpdates: currentStepUpdates
+                                             ,main: main
+                                             ,actions: actions
+                                             ,model: model
+                                             ,update: update
+                                             ,introText: introText
+                                             ,view: view
+                                             ,letterBlocks: letterBlocks
+                                             ,treeJson: treeJson
+                                             ,treeJson$: treeJson$};
+};
