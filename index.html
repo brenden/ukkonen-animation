@@ -58,7 +58,7 @@
     // Set up d3 tree visualization
     var margin = {top: 20, right: 20, bottom: 10, left: 20};
     var width = 960 - margin.right - margin.left;
-    var height = 700 - margin.top - margin.bottom;
+    var height = 600 - margin.top - margin.bottom;
     var duration = 750;
     var tree = d3.layout.tree()
       .size([height, width])
@@ -342,7 +342,7 @@
         .select("text > tspan:nth-child(2)")
         .text(function(d) {
           if (d.target.childNumber == d.source.activeEdgeChild) {
-            return "⚫"
+            return "|"
           } else {
             return "";
           }
