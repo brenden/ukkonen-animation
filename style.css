@@ -48,6 +48,10 @@ button:hover {
   text-decoration: none;
 }
 
+svg {
+  margin-top: 60px;
+}
+
 #heading {
   background-color: #F9F9F9;
   padding: 20px;
@@ -146,8 +150,8 @@ button:hover {
 
 #letter-blocks {
   margin: 20px 0 0 20px;
-  display: inline-block;
-  float: left;
+  position: absolute;
+  margin-left: 280px;
 }
 
 #letter-blocks div {
