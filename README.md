@@ -3,6 +3,8 @@ A step-by-step visualization of Ukkonen's algorithm for constructing suffix tree
 
 [http://brenden.github.io/ukkonen-animation](http://brenden.github.io/ukkonen-animation/)
 
+<img src="http://brenden.github.io/ukkonen-animation/ukkonen-screen.png" />
+
 ## License
 (The MIT License)
 
