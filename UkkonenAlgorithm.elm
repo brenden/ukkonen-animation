@@ -57,6 +57,7 @@ insert' newChar state =
 
         -- Get the index of the character being inserted
         i = Array.length string - 1
+
     in
         case activePoint.edge of
             -- The case that there's currently no active edge, i.e the active point
@@ -108,11 +109,12 @@ insert' newChar state =
                             else
                                 let
                                     newState =
-                                        { state
-                                            | tree = newTree2
-                                            , activePoint = nextActivePoint state tree
-                                            , remainder = state.remainder - 1
-                                        }
+                                        normalizeActivePoint <|
+                                            { state
+                                                | tree = newTree2
+                                                , activePoint = nextActivePoint state tree
+                                                , remainder = state.remainder - 1
+                                            }
                                 in
                                     newState :: (insert' newChar newState)
 
@@ -242,7 +244,19 @@ nextActivePoint state tree =
             Nothing ->
                 case activePoint.edge of
                     Nothing ->
-                        { activePoint | nodeId = 0 }
+                         { activePoint
+                            | nodeId = 0
+                            , edge =
+                              if state.remainder == 1 then
+                                  Nothing
+                              else
+                                  Just
+                                    ( getChar
+                                        (Array.length state.string - state.remainder + 1)
+                                        state.string
+                                    , state.remainder - 2
+                                    )
+                        }
 
                     Just ( edgeChar, edgeSteps ) ->
                         { activePoint
