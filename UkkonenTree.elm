@@ -153,3 +153,37 @@ toString' level rootId tree =
 newLine =
     """
 """
+
+
+{- Get the string an edge represents -}
+edgeString : UkkonenEdge -> String -> String
+edgeString edge string =
+    let labelEnd = case edge.labelEnd of
+      Definite val -> val
+      EndOfString -> -1
+    in
+    slice
+        edge.labelStart
+        labelEnd
+        string
+
+
+{-| Gets all suffixes represented in the tree
+-}
+suffixes : UkkonenTree -> NodeId -> String -> List String
+suffixes tree rootId string =
+    let
+        root = getNode rootId tree
+    in
+        if Dict.size root.edges == 0 then
+            [""]
+        else
+            List.concatMap
+                (\ edge ->
+                    let edgeLabel = edgeString edge string
+                    in
+                    List.map
+                        (\ childSuffix -> edgeLabel ++ childSuffix)
+                        (suffixes tree edge.pointingTo string)
+                )
+                (Dict.values root.edges)
