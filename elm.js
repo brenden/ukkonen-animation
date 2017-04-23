@@ -8490,6 +8490,10 @@ Elm.UkkonenTree.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $String = Elm.String.make(_elm);
    var _op = {};
+   var edgeString = F2(function (edge,string) {
+      var labelEnd = function () {    var _p0 = edge.labelEnd;if (_p0.ctor === "Definite") {    return _p0._0;} else {    return -1;}}();
+      return A3($String.slice,edge.labelStart,labelEnd,string);
+   });
    var newLine = "\n";
    var addNode = function (tree) {
       var newNode = {edges: $Dict.empty,suffixLink: $Maybe.Nothing};
@@ -8498,11 +8502,11 @@ Elm.UkkonenTree.make = function (_elm) {
       return {ctor: "_Tuple2",_0: newTree,_1: count};
    };
    var getNode = F2(function (nodeId,tree) {
-      var _p0 = A2($IntDict.get,nodeId,tree);
-      if (_p0.ctor === "Just") {
-            return _p0._0;
+      var _p1 = A2($IntDict.get,nodeId,tree);
+      if (_p1.ctor === "Just") {
+            return _p1._0;
          } else {
-            return _U.crashCase("UkkonenTree",{start: {line: 82,column: 5},end: {line: 87,column: 70}},_p0)("Tried to reference a node that does\'t exist");
+            return _U.crashCase("UkkonenTree",{start: {line: 82,column: 5},end: {line: 87,column: 70}},_p1)("Tried to reference a node that does\'t exist");
          }
    });
    var setSuffixLink = F3(function (fromId,toId,tree) {
@@ -8529,6 +8533,15 @@ Elm.UkkonenTree.make = function (_elm) {
       root.edges))))));
    });
    var toString = A2(toString$,0,0);
+   var suffixes = F3(function (tree,rootId,string) {
+      var root = A2(getNode,rootId,tree);
+      return _U.eq($Dict.size(root.edges),0) ? _U.list([""]) : A2($List.concatMap,
+      function (edge) {
+         var edgeLabel = A2(edgeString,edge,string);
+         return A2($List.map,function (childSuffix) {    return A2($Basics._op["++"],edgeLabel,childSuffix);},A3(suffixes,tree,edge.pointingTo,string));
+      },
+      $Dict.values(root.edges));
+   });
    var setEdge = F6(function (fromId,toId,$char,labelStart,labelEnd,tree) {
       var newEdge = {pointingTo: toId,labelStart: labelStart,labelEnd: labelEnd};
       var node = A2(getNode,fromId,tree);
@@ -8537,13 +8550,13 @@ Elm.UkkonenTree.make = function (_elm) {
       return A3($IntDict.insert,fromId,newNode,tree);
    });
    var getEdge = F3(function (nodeId,$char,tree) {
-      var _p2 = A2($IntDict.get,nodeId,tree);
-      if (_p2.ctor === "Just") {
-            return A2($Dict.get,$char,_p2._0.edges);
+      var _p3 = A2($IntDict.get,nodeId,tree);
+      if (_p3.ctor === "Just") {
+            return A2($Dict.get,$char,_p3._0.edges);
          } else {
             return _U.crashCase("UkkonenTree",
             {start: {line: 50,column: 5},end: {line: 55,column: 75}},
-            _p2)("Active point is set to a node that doesn\'t exist");
+            _p3)("Active point is set to a node that doesn\'t exist");
          }
    });
    var emptyTree = function () {    var newNode = {edges: $Dict.empty,suffixLink: $Maybe.Nothing};return A3($IntDict.insert,0,newNode,$IntDict.empty);}();
@@ -8564,7 +8577,9 @@ Elm.UkkonenTree.make = function (_elm) {
                                     ,setSuffixLink: setSuffixLink
                                     ,toString: toString
                                     ,toString$: toString$
-                                    ,newLine: newLine};
+                                    ,newLine: newLine
+                                    ,edgeString: edgeString
+                                    ,suffixes: suffixes};
 };
 Elm.UkkonenAlgorithm = Elm.UkkonenAlgorithm || {};
 Elm.UkkonenAlgorithm.make = function (_elm) {
@@ -8587,7 +8602,7 @@ Elm.UkkonenAlgorithm.make = function (_elm) {
       if (_p0.ctor === "Just") {
             return _p0._0;
          } else {
-            return _U.crashCase("UkkonenAlgorithm",{start: {line: 340,column: 5},end: {line: 349,column: 41}},_p0)(A2($Basics._op["++"],
+            return _U.crashCase("UkkonenAlgorithm",{start: {line: 354,column: 5},end: {line: 363,column: 41}},_p0)(A2($Basics._op["++"],
             "Tried to look up index ",
             A2($Basics._op["++"],$Basics.toString(i),A2($Basics._op["++"],", which is outside the bounds of ",$Basics.toString(str)))));
          }
@@ -8618,7 +8633,7 @@ Elm.UkkonenAlgorithm.make = function (_elm) {
                                  {activePoint: _U.update(activePoint,
                                  {nodeId: _p5.pointingTo
                                  ,edge: $Maybe.Just({ctor: "_Tuple2"
-                                                    ,_0: A2(getChar,stringLen - state.remainder + 1,state.string)
+                                                    ,_0: A2(getChar,stringLen - _p6 + activeEdgeLength - 1,state.string)
                                                     ,_1: _p6 - activeEdgeLength})})});
                                  state = _v4;
                                  continue normalizeActivePoint;
@@ -8639,7 +8654,11 @@ Elm.UkkonenAlgorithm.make = function (_elm) {
          } else {
             var _p8 = activePoint.edge;
             if (_p8.ctor === "Nothing") {
-                  return _U.update(activePoint,{nodeId: 0});
+                  return _U.update(activePoint,
+                  {nodeId: 0
+                  ,edge: _U.eq(state.remainder,1) ? $Maybe.Nothing : $Maybe.Just({ctor: "_Tuple2"
+                                                                                 ,_0: A2(getChar,$Array.length(state.string) - state.remainder + 1,state.string)
+                                                                                 ,_1: state.remainder - 2})});
                } else {
                   return _U.update(activePoint,
                   {nodeId: 0
@@ -8674,7 +8693,8 @@ Elm.UkkonenAlgorithm.make = function (_elm) {
                         var newState = _U.update(state,{tree: newTree2,lastSplitNode: $Maybe.Nothing,charsAdded: charsAdded + 1});
                         return _U.list([newState]);
                      } else {
-                        var newState = _U.update(state,{tree: newTree2,activePoint: A2(nextActivePoint,state,tree),remainder: state.remainder - 1});
+                        var newState = normalizeActivePoint(_U.update(state,
+                        {tree: newTree2,activePoint: A2(nextActivePoint,state,tree),remainder: state.remainder - 1}));
                         return A2($List._op["::"],newState,A2(insert$,newChar,newState));
                      }
                }
@@ -8692,7 +8712,9 @@ Elm.UkkonenAlgorithm.make = function (_elm) {
                      ,charsAdded: charsAdded + 1
                      ,lastSplitNode: $Maybe.Nothing}))]); else {
                         var newActivePoint = _U.eq(activePoint.nodeId,0) ? _U.update(activePoint,
-                        {edge: $Maybe.Just({ctor: "_Tuple2",_0: A2(getChar,i - state.remainder + 2,string),_1: _p20 - 1})}) : A2(nextActivePoint,state,tree);
+                        {edge: $Maybe.Just({ctor: "_Tuple2",_0: A2(getChar,i - state.remainder + 2,string),_1: state.remainder - 2})}) : A2(nextActivePoint,
+                        state,
+                        tree);
                         var _p14 = $UkkonenTree.addNode(tree);
                         var newTree1 = _p14._0;
                         var newNodeId1 = _p14._1;
@@ -8721,9 +8743,9 @@ Elm.UkkonenAlgorithm.make = function (_elm) {
                         return A2($List._op["::"],newState,A2(insert$,newChar,newState));
                      }
                } else {
-                  return _U.crashCase("UkkonenAlgorithm",
-                  {start: {line: 121,column: 17},end: {line: 223,column: 80}},
-                  _p13)("active_edge is set to a nonexistent edge.");
+                  return _U.crashCase("UkkonenAlgorithm",{start: {line: 123,column: 17},end: {line: 225,column: 117}},_p13)(A2($Basics._op["++"],
+                  "active_edge is set to a nonexistent edge: ",
+                  $Basics.toString(activePoint)));
                }
          }
    });
