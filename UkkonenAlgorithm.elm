@@ -202,7 +202,7 @@ insert' newChar state =
                                                         ( getChar
                                                             (i - state.remainder + 2)
                                                             string
-                                                        , edgeSteps - 1
+                                                        , state.remainder - 2
                                                         )
                                             }
                                         else
@@ -222,7 +222,7 @@ insert' newChar state =
                                     newState :: (insert' newChar newState)
 
                     Nothing ->
-                        Debug.crash "active_edge is set to a nonexistent edge."
+                        Debug.crash <| "active_edge is set to a nonexistent edge: " ++ (Basics.toString activePoint)
 
 
 {-| Update the active point to reflect the next suffix to be inserted. If a
@@ -319,7 +319,7 @@ normalizeActivePoint state =
                                             | activePoint =
                                                 { activePoint
                                                     | nodeId = activeEdge.pointingTo
-                                                    , edge = Just ( getChar (stringLen - state.remainder + 1) state.string, edgeSteps - activeEdgeLength )
+                                                    , edge = Just ( getChar (stringLen - edgeSteps + activeEdgeLength - 1) state.string, edgeSteps - activeEdgeLength )
                                                 }
                                         }
 
