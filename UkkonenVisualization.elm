@@ -162,7 +162,7 @@ update action model =
 
                     steps = Array.fromList (initialState :: UkkonenAlgorithm.steps terminatedString)
                 in
-                    { model | string = terminatedString, steps = steps, currentStep = 0, inputField = noContent }
+                    { model | string = terminatedString, steps = steps, currentStep = 0 }
 
         Back ->
             { model | currentStep = max (model.currentStep - 1) 0 }
